@@ -15,6 +15,9 @@ outFolder: 'leafcutter/'
 refCondition: 'control'
 altCondition: 'tdp_kd'
 
+refFolder: "/Users/jack/Software/GENCODE/"
+refFile: "gencode.v29.annotation.gtf.gz"
+refCode: "gencode_hg38_v29"
 # for regtools
 # (0 = unstranded, 1 = first-strand/RF, 2, = second-strand/FR)
 stranded: 2
