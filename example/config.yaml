@@ -1,0 +1,20 @@
+leafcutterPath: '/Users/jack/Software/leafcutter'
+python2Path: '/usr/bin/python'
+python3Path: '/Users/jack/miniconda3/bin/python3'
+
+dataCode: 'TDP_example'
+
+samples: 'samples.tsv'
+
+ref: 'ref/gencode_hg38.gtf'
+
+inFolder: 'data/'
+
+outFolder: 'leafcutter/'
+
+refCondition: 'control'
+altCondition: 'tdp_kd'
+
+# for regtools
+# (0 = unstranded, 1 = first-strand/RF, 2, = second-strand/FR)
+stranded: 2
