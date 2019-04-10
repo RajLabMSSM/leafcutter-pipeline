@@ -1,5 +1,4 @@
 __default__:
-  project: acc_LOAD
   partition: bode
   queue: premium
   cores: 1

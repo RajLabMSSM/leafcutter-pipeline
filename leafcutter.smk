@@ -1,4 +1,3 @@
-
 # snakefile for leafcutter pipeline
 
 import pandas as pd

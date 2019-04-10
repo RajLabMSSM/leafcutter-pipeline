@@ -1,1 +1,1 @@
-snakemake -n -s ../leafcutter.smk --configfile config.yaml
+snakemake -s ../leafcutter.smk --configfile config.yaml

@@ -21,3 +21,4 @@ refCode: "gencode_hg38_v29"
 # for regtools
 # (0 = unstranded, 1 = first-strand/RF, 2, = second-strand/FR)
 stranded: 2
+
