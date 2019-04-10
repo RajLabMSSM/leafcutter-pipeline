@@ -60,7 +60,10 @@ rule clusterJunctions:
 		"for i in {input};"
 		"do echo $i >> {output.junctionList};"
 		"done;"
-		"{python2Path} {leafcutterPath}/scripts/leafcutter_cluster_regtools.py -j {output.junctionList} -m 20 -o {outFolder}{dataCode} -l 500000;"
+		#"{python2Path} {leafcutterPath}/scripts/leafcutter_cluster_regtools.py -j {output.junctionList} -m 20 -o {outFolder}{dataCode} -l 500000;"
+# python3 version - taken from a fork from https://github.com/mdshw5/leafcutter/blob/master/scripts/leafcutter_cluster_regtools.py
+		"{python3Path} ../scripts/leafcutter_cluster_regtools.py -j {output.junctionList} -m 20 -o {outFolder}{dataCode} -l 500000;"
+
 
 rule leafcutterDS:
 	input:
