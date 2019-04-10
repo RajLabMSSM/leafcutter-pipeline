@@ -1,6 +1,12 @@
+
+# needs to be on minerva
 leafcutterPath: '/Users/jack/Software/leafcutter'
-python2Path: '/usr/bin/python'
-python3Path: '/Users/jack/miniconda3/bin/python3'
+
+
+# now deprecated
+#ipython2Path: '/usr/bin/python'
+#python3Path: '/Users/jack/miniconda3/bin/python3'
+python3Path: 'python3'
 
 dataCode: 'TDP_example'
 
@@ -15,7 +21,8 @@ outFolder: 'leafcutter/'
 refCondition: 'control'
 altCondition: 'tdp_kd'
 
-refFolder: "/Users/jack/Software/GENCODE/"
+#refFolder: "/Users/jack/Software/GENCODE/"
+refFolder: "/hpc/users/humphj04/GENCODE/"
 refFile: "gencode.v29.annotation.gtf.gz"
 refCode: "gencode_hg38_v29"
 # for regtools
