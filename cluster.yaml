@@ -1,5 +1,5 @@
 __default__:
-  partition: manda
+  #partition: chimera
   queue: premium
   cores: 1
   mem: 3750

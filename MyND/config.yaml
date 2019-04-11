@@ -1,0 +1,42 @@
+
+# needs to be on minerva
+#leafcutterPath: '/Users/jack/Software/leafcutter'
+leafcutterPath: '/hpc/users/humphj04/software/leafcutter'
+
+# now deprecated
+#ipython2Path: '/usr/bin/python'
+#python3Path: '/Users/jack/miniconda3/bin/python3'
+python3Path: 'python3'
+
+dataCode: 'PD_no_covariates'
+
+# samples.tsv is a list of sample names
+samples: 'samples_no_covariates.tsv'
+# bamSuffix - what to append to the sample name to get the BAM file name
+bamSuffix: '_Aligned.Quality.Sorted.bam'
+
+#ref: 'ref/gencode_hg38.gtf'
+
+inFolder: 'data/'
+
+outFolder: 'mini_comparison/'
+
+refCondition: 'Control'
+altCondition: 'PD'
+
+#refFolder: "/Users/jack/Software/GENCODE/"
+refFolder: "/hpc/users/humphj04/GENCODE/"
+refFile: "gencode.v30lift37.annotation.gtf.gz"
+refCode: "gencode_hg19_v30"
+
+# for regtools
+# (0 = unstranded, 1 = first-strand/RF, 2, = second-strand/FR)
+stranded: 2
+
+# for Leafcutter
+leafcutter:
+        samplesPerIntron: 2
+        samplesPerGroup: 2
+        minCoverage: 10
+        minCluRatio: 0.01
+        minCluReads: 100
