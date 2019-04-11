@@ -10,7 +10,10 @@ python3Path: 'python3'
 
 dataCode: 'TDP_example'
 
+# samples.tsv is a list of sample names
 samples: 'samples.tsv'
+# bamSuffix - what to append to the sample name to get the BAM file name
+bamSuffix: '.bam'
 
 #ref: 'ref/gencode_hg38.gtf'
 

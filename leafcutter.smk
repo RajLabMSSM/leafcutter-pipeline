@@ -24,6 +24,7 @@ outFolder = config['outFolder']
 stranded = config['stranded']
 
 samples = config['samples']
+bamSuffix = config['bamSuffix']
 
 refCondition = config['refCondition']
 altCondition = config['altCondition']
@@ -46,7 +47,7 @@ rule all:
 # use regtools to extract junctions if not already completed
 rule extractJunctions:
 	input:
-		inFolder + '{samples}.bam'
+		inFolder + '{samples}' + bamSuffix
 	output:
 		outFolder + 'junctions/{samples}.junc'
 	shell:
