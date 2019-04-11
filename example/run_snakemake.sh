@@ -1,4 +1,6 @@
-conda activate default
-ml R
+#conda activate default
+# samtools and regtools are installed on this default environment
+#ml R
+# this version of R has the current version of leafcutter
 
-snakemake -n -s ../leafcutter.smk --configfile config.yaml
+snakemake  -s ../leafcutter.smk --configfile config.yaml

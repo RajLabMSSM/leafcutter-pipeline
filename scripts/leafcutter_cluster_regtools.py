@@ -68,10 +68,17 @@ def pool_junc_reads(flist, options):
     fout = open(outFile, 'w')
     Ncluster = 0
     sys.stderr.write("Parsing...\n")
+    print("HOW MANY CHROMOSOMES ARE THERE ANYWAY?")
+    print(by_chrom)
+    print("there are %d elements in by_chrom"%len(by_chrom))
     for chrom in by_chrom:
         read_ks = [k for k,v in list(by_chrom[chrom].items()) if v >= 3] # a junction must have at least 3 reads
         read_ks.sort()
         sys.stderr.write("%s:%s.."%chrom)
+        if len(read_ks) == 0:
+             continue # weird test case for toy data with only 1 gene - two chroms but one is empty after filtering
+        print("LOOK HERE BOYO")
+        print(read_ks)
         clu = cluster_intervals(read_ks)[0]
         for cl in clu:
             if len(cl) > 1: # if cluster has more than one intron
@@ -139,9 +146,15 @@ def sort_junctions(libl, options):
                 sys.stderr.write("merging %s...\n"%(" ".join(merges[libN])))
         else:
             pass
-        fout = gzip.open(foutName,'w')
+        
+        header_string = "chrom %s\n"%libN.split("/")[-1].split(".junc")[0]
+        
+        fout = gzip.open(foutName, 'wb')
 
-        fout.write("chrom %s\n"%libN.split("/")[-1].split(".junc")[0])
+        fout.write(header_string.encode('utf-8') )
+	#fout = gzip.open(foutName,'wb')
+
+        #fout.write("chrom %s\n"%libN.split("/")[-1].split(".junc")[0])
 
         for lib in merges[libN]:
 
@@ -195,7 +208,7 @@ def sort_junctions(libl, options):
                 else:
                     buf.append("%s:%d:%d:clu_%d_%s 0/%d\n"%(chromID,start, end,clu,strand, tot))
 
-            fout.write("".join(buf))
+            fout.write("".join(buf).encode('utf-8') )
         fout.close()
     fout_runlibs.close()
 
@@ -258,7 +271,7 @@ def merge_junctions(options):
     while len(lsts) > 1:
         clst = []
 
-        for i in range(0,(len(lsts)/N)+1):
+        for i in range(0,(len(lsts)//N)+1):
             lst = lsts[N*i:N*(i+1)]
             if len(lst) > 0:
                 clst.append(lst)
@@ -283,7 +296,7 @@ def merge_files(fnames, fout, options):
     fopen = []
     for fname in fnames:
         if fname[-3:] == ".gz":
-            fopen.append(gzip.open(fname))
+            fopen.append(gzip.open(fname, "rt")) # rt mode opens gzipped file as text file
         else:
             fopen.append(open(fname))
 
@@ -308,7 +321,10 @@ def merge_files(fnames, fout, options):
             if buf[0] == "chrom":
                 if options.verbose:
                     sys.stderr.write("merging %d files"%(len(buf)-1))
-            fout.write(" ".join(buf)+'\n')
+            
+            # problematic line - buf is stored as bytes rather than a string
+            out_string = " ".join(buf)+'\n'
+            fout.write(out_string.encode('utf-8') )
         else:
             break
 
@@ -320,6 +336,7 @@ def merge_files(fnames, fout, options):
 def cluster_intervals(E):
     ''' Clusters intervals together. '''
     E.sort()
+    print(len(E))
     current = E[0]
     Eclusters, cluster = [], []
 
@@ -433,19 +450,20 @@ def get_numers(options):
     rundir = options.rundir
     fname = "%s/%s_perind.counts.gz"%(rundir,outPrefix)
     fnameout = "%s/%s_perind_numers.counts.gz"%(rundir,outPrefix)
-    input_file=gzip.open(fname, 'rb')
+    input_file=gzip.open(fname, 'rt') # read in as text
     fout = gzip.open(fnameout,'w')
     first_line=True
 
     for l in input_file:
         if first_line:
-            fout.write(" ".join(l.strip().split(" ")[1:])+'\n') # print the sample names
+            header_string = " ".join(l.strip().split(" ")[1:])+'\n'
+            fout.write(header_string.encode('utf-8')) # print the sample names
             first_line=False
         else:
             l=l.strip()
             words=l.split(" ")
-
-            fout.write(words[0]+ " "+ " ".join( [ g.split("/")[0] for g in words[1:] ] ) +'\n')
+            words_string = words[0]+ " "+ " ".join( [ g.split("/")[0] for g in words[1:] ] ) +'\n'
+            fout.write(words_string.encode('utf-8'))
 
     input_file.close()
     fout.close()

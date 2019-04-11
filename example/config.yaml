@@ -1,7 +1,7 @@
 
 # needs to be on minerva
-leafcutterPath: '/Users/jack/Software/leafcutter'
-
+#leafcutterPath: '/Users/jack/Software/leafcutter'
+leafcutterPath: '/hpc/users/humphj04/software/leafcutter'
 
 # now deprecated
 #ipython2Path: '/usr/bin/python'
@@ -12,11 +12,11 @@ dataCode: 'TDP_example'
 
 samples: 'samples.tsv'
 
-ref: 'ref/gencode_hg38.gtf'
+#ref: 'ref/gencode_hg38.gtf'
 
 inFolder: 'data/'
 
-outFolder: 'leafcutter/'
+outFolder: 'leafcutter_unstranded/'
 
 refCondition: 'control'
 altCondition: 'tdp_kd'
@@ -25,7 +25,9 @@ altCondition: 'tdp_kd'
 refFolder: "/hpc/users/humphj04/GENCODE/"
 refFile: "gencode.v29.annotation.gtf.gz"
 refCode: "gencode_hg38_v29"
+
 # for regtools
 # (0 = unstranded, 1 = first-strand/RF, 2, = second-strand/FR)
-stranded: 2
+# Klim et al data is unstranded
+stranded: 0
 

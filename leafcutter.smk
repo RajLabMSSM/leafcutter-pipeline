@@ -1,4 +1,11 @@
 # snakefile for leafcutter pipeline
+# dependencies:
+# samtools
+# regtools
+# python - pandas
+# R - leafcutter
+# R - a bunch of packages
+
 
 import pandas as pd
 import os
@@ -8,7 +15,7 @@ import os
 
 # get stuff out of the config.yaml
 leafcutterPath = config['leafcutterPath']
-python2Path = config['python2Path']
+#python2Path = config['python2Path']
 python3Path = config['python3Path']
 
 dataCode = config['dataCode']
@@ -44,8 +51,9 @@ rule extractJunctions:
 		outFolder + 'junctions/{samples}.junc'
 	shell:
 		"samtools index {input};"
-		"regtools junctions extract -a 8 -m 50 -M 500000 -s {stranded} -o {output} {input}"
-
+		#"regtools junctions extract -a 8 -m 50 -M 500000 -s {stranded} -o {output} {input}"
+		# conda version of regtools uses i and I instead of m and M 
+		"regtools junctions extract -a 8 -i 50 -I 500000 -s {stranded} -o {output} {input}"
 
 # Yang's script to cluster regtools junctions still uses python2
 rule clusterJunctions:
@@ -75,7 +83,7 @@ rule leafcutterDS:
 		effectSizes = outFolder + dataCode + "_effect_sizes.txt"
 	shell:
 		"rm {input.tempFiles};"
-		"Rscript ../sort_support.R "
+		"Rscript ../scripts/sort_support.R "
 		"	--samples {samples} "
 		"	--dataCode {dataCode} "
 		"	--refCondition {refCondition} "
