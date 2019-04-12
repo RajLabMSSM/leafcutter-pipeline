@@ -10,23 +10,24 @@
 import pandas as pd
 import os
 
-
-
-
 # get variables out of config.yaml
 
-
-# get stuff out of the config.yaml
 leafcutterPath = config['leafcutterPath']
 #python2Path = config['python2Path']
 python3Path = config['python3Path']
 
 dataCode = config['dataCode']
+
+print(dataCode)
+
 inFolder = config['inFolder']
-outFolder = config['outFolder']
+# create outFolder path using dataCode
+outFolder = config['outFolder'] + config['dataCode'] + '/'
 stranded = config['stranded']
 
-samples = config['samples']
+print(outFolder)
+
+metadata = config['metadata']
 bamSuffix = config['bamSuffix']
 
 refCondition = config['refCondition']
@@ -39,15 +40,18 @@ refCode = config['refCode']
 
 # leafcutter options
 leafcutterOpt = config['leafcutter']
+# clustering options
+minCluRatio = leafcutterOpt["minCluRatio"]
+minCluReads = leafcutterOpt["minCluReads"]
+intronMax = leafcutterOpt["intronMax"]
+# ds options
 samplesPerIntron = leafcutterOpt["samplesPerIntron"]
 samplesPerGroup = leafcutterOpt["samplesPerGroup"]
 minCoverage = leafcutterOpt["minCoverage"]
-minCluRatio = leafcutterOpt["minCluRatio"]
-minCluReads = leafcutterOpt["minCluReads"]
 
 # get sample information of support file
 # using pandas
-SAMPLES = pd.read_csv(samples, sep = '\t')['sample']
+samples = pd.read_csv(metadata, sep = '\t')['sample']
 
 localrules: copyConfig
 
@@ -73,38 +77,47 @@ rule extractJunctions:
 		# conda version of regtools uses i and I instead of m and M 
 		"regtools junctions extract -a 8 -i 50 -I 500000 -s {stranded} -o {output} {input}"
 
+# copy the config and samples files in to the outFolder for posterity
 rule copyConfig:
-	input: "config.yaml"
-	output: outFolder + "config.yaml"
+	input: 
+		config = "config.yaml",
+		metadata = metadata
+
+	output: 
+		config = outFolder + "config.yaml",
+		metadata = outFolder + "samples.tsv"
 	shell:
-		"cp {input} {output}"
+		"cp {input.config} {output.config};"
+		"cp {input.metadata} {output.metadata}"
 
 
 # Yang's script to cluster regtools junctions still uses python2
+# I took an updated version from a github fork and fixed the bugs
 rule clusterJunctions:
 	input: 
-		expand('junctions/{samples}.junc', samples = SAMPLES)
+		expand('junctions/{samples}.junc', samples = samples)
 	output:
-		junctionList=outFolder + "junctionList.txt",
-		clusters=outFolder + dataCode + "_perind_numers.counts.gz",
-		tempFiles = expand('{samples}.junc.{dataCode}.sorted.gz', samples = SAMPLES, dataCode = dataCode )
+		junctionList = outFolder + "junctionList.txt",
+		clusters = outFolder + dataCode + "_perind_numers.counts.gz",
+		tempFiles = expand('{samples}.junc.{dataCode}.sorted.gz', samples = samples, dataCode = dataCode )
 	shell:
                 'export PS1="";'
-                "source activate default;"
-		"touch {output.junctionList};"
-		"for i in {input};"
-		"do echo $i >> {output.junctionList};"
-		"done;"
-		# python3 version - taken from a fork from https://github.com/mdshw5/leafcutter/blob/master/scripts/leafcutter_cluster_regtools.py
+                'source activate default;'
+		'touch {output.junctionList};'
+		'for i in {input};'
+		'do echo $i >> {output.junctionList};'
+		'done;'
+		# from https://github.com/mdshw5/leafcutter/blob/master/scripts/leafcutter_cluster_regtools.py
+		# now lives inside the leafcutter pipeline repo 
 		'{python3Path} ../scripts/leafcutter_cluster_regtools.py '
 		'-j {output.junctionList} --minclureads {minCluReads} '
-		'--mincluratio {minCluRatio}  -o {outFolder}{dataCode} -l 500000;'
+		'--mincluratio {minCluRatio}  -o {outFolder}{dataCode} -l {intronMax};'
 
-
+# run differential splicing
 rule leafcutterDS:
 	input:
 		clusters=outFolder + dataCode + "_perind_numers.counts.gz",
-		tempFiles=expand('{samples}.junc.{dataCode}.sorted.gz', samples = SAMPLES, dataCode = dataCode )
+		tempFiles=expand('{samples}.junc.{dataCode}.sorted.gz', samples = samples, dataCode = dataCode )
 	output:
 		support = outFolder + dataCode + "_ds_support.tsv",
 		sigClusters = outFolder + dataCode + "_cluster_significance.txt",
@@ -128,6 +141,7 @@ rule leafcutterDS:
 		'	{input.clusters} '
 		'	{output.support} '
 
+# for the Shiny app 
 rule createRefs:
 	input:
 		refFolder + refFile

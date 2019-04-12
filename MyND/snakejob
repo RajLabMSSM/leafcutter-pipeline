@@ -19,6 +19,6 @@ bsub=("bsub -K -J $jname:{rule}:{wildcards}"
 
 snakemake -u ../cluster.yaml --cluster-sync "${bsub[*]}" \
   --local-cores 4 --max-jobs-per-second 5 "$@" --jobs 100 \
-  -s ../leafcutter.smk --configfile config.yaml
+  -s ../Snakefile --configfile config.yaml
 
 
