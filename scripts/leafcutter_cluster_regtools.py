@@ -336,7 +336,7 @@ def merge_files(fnames, fout, options):
 def cluster_intervals(E):
     ''' Clusters intervals together. '''
     E.sort()
-    print(len(E))
+    #print(len(E))
     current = E[0]
     Eclusters, cluster = [], []
 
