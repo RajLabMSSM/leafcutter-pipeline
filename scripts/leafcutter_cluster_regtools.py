@@ -68,17 +68,17 @@ def pool_junc_reads(flist, options):
     fout = open(outFile, 'w')
     Ncluster = 0
     sys.stderr.write("Parsing...\n")
-    print("HOW MANY CHROMOSOMES ARE THERE ANYWAY?")
-    print(by_chrom)
-    print("there are %d elements in by_chrom"%len(by_chrom))
+    #print("HOW MANY CHROMOSOMES ARE THERE ANYWAY?")
+    #print(by_chrom)
+    #print("there are %d elements in by_chrom"%len(by_chrom))
     for chrom in by_chrom:
         read_ks = [k for k,v in list(by_chrom[chrom].items()) if v >= 3] # a junction must have at least 3 reads
         read_ks.sort()
         sys.stderr.write("%s:%s.."%chrom)
         if len(read_ks) == 0:
              continue # weird test case for toy data with only 1 gene - two chroms but one is empty after filtering
-        print("LOOK HERE BOYO")
-        print(read_ks)
+        #print("LOOK HERE BOYO")
+        #print(read_ks)
         clu = cluster_intervals(read_ks)[0]
         for cl in clu:
             if len(cl) > 1: # if cluster has more than one intron

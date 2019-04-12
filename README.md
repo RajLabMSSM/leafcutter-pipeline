@@ -45,8 +45,28 @@ TODO: create an RMarkdown/plain text report file summarising the run and the res
 *config.yaml* - this specifies the dataset-specific parameters.
 For differential splicing analysis between two conditions, the reference condition **refCondition** and alternate condition **altCondition** must be set.
 
+
+You need to then have a folder where all the BAMs are kept. If the BAMs are split across many folders, then create a single folder with symbolic links to each BAM. The pipeline requires that the names of each BAM are in the format:
+	`<sampleID><bamSuffix>`
+You specify the `bamSuffix` in the *config.yaml*
+So a sample with ID 'sample1' and a bam file 'sample1_aligned.bam' would have a `bamSuffix` of '_aligned.bam'. 
+
+
 ## Running on Chimera
 
-`./snakejobs`
+You can run the pipeline either in serial as a single process, or in parallel using Chimera's job submission.
+In practice, only *extractJunctions* requires parallel execution. The following steps can all be run together.
+
+1. Running each step in serial - assume that junctions have already been created
+
+	`./snakelocal`
+
+2. Running in parallel with LSF job submission
+
+	`./snakejobs`
+
 
 This is configured to run on Chimera using a script written by Brian FH from the Goate lab. Thanks Brian!
+
+In *cluster.yaml* the resource requirements for each step are laid out.
+

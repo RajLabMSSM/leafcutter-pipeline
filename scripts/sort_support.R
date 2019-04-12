@@ -8,7 +8,7 @@
 library(optparse)
 
 option_list <- list(
-    make_option(c('--samples'), help='', default = "samples.tsv"),
+    make_option(c('--metadata'), help='', default = "samples.tsv"),
     make_option(c('--dataCode'), help='', default = "example"),
     make_option(c('--refCondition'), help='', default = "control"),
     make_option(c('--altCondition'), help='', default="case"),
@@ -20,7 +20,7 @@ option.parser <- OptionParser(option_list=option_list)
 opt <- parse_args(option.parser)
 
 
-samples <- opt$samples
+metadata <- opt$metadata
 dataCode <- opt$dataCode
 refCondition <- opt$refCondition
 altCondition <- opt$altCondition
@@ -29,7 +29,7 @@ outFolder <- opt$outFolder
 outFile <- paste0(outFolder, "/", dataCode, "_ds_support.tsv")
 
 
-df <- read.table(samples, header=TRUE, sep = "\t", stringsAsFactors = FALSE)
+df <- read.table(metadata, header=TRUE, sep = "\t", stringsAsFactors = FALSE)
 
 names(df)[2] <- "condition"
 

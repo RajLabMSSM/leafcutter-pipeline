@@ -71,7 +71,7 @@ rule extractJunctions:
 		'junctions/{samples}.junc'
 	shell:
 		'export PS1="";'
-		"source activate default;"
+		"source activate leafcutterPipeline;"
 		"samtools index {input};"
 		#"regtools junctions extract -a 8 -m 50 -M 500000 -s {stranded} -o {output} {input}"
 		# conda version of regtools uses i and I instead of m and M 
@@ -102,7 +102,7 @@ rule clusterJunctions:
 		tempFiles = expand('{samples}.junc.{dataCode}.sorted.gz', samples = samples, dataCode = dataCode )
 	shell:
                 'export PS1="";'
-                'source activate default;'
+                'source activate leafcutterPipeline;'
 		'touch {output.junctionList};'
 		'for i in {input};'
 		'do echo $i >> {output.junctionList};'
@@ -112,21 +112,22 @@ rule clusterJunctions:
 		'{python3Path} ../scripts/leafcutter_cluster_regtools.py '
 		'-j {output.junctionList} --minclureads {minCluReads} '
 		'--mincluratio {minCluRatio}  -o {outFolder}{dataCode} -l {intronMax};'
+		'rm {output.tempFiles}'
 
 # run differential splicing
 rule leafcutterDS:
 	input:
 		clusters=outFolder + dataCode + "_perind_numers.counts.gz",
-		tempFiles=expand('{samples}.junc.{dataCode}.sorted.gz', samples = samples, dataCode = dataCode )
+		#tempFiles=expand('{samples}.junc.{dataCode}.sorted.gz', samples = samples, dataCode = dataCode )
 	output:
 		support = outFolder + dataCode + "_ds_support.tsv",
 		sigClusters = outFolder + dataCode + "_cluster_significance.txt",
 		effectSizes = outFolder + dataCode + "_effect_sizes.txt"
 	shell:	
 		"ml R;"
-		"rm {input.tempFiles};"
+		#"rm {input.tempFiles};"
 		"Rscript ../scripts/sort_support.R "
-		"	--samples {samples} "
+		"	--metadata {metadata} "
 		"	--dataCode {dataCode} "
 		"	--refCondition {refCondition} "
 		"	--altCondition {altCondition} "
