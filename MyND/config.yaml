@@ -34,8 +34,8 @@ leafcutter:
         minCluReads: 50
         intronMax: 100000
         # ds options
-        samplesPerIntron: 5
-        samplesPerGroup: 5
+        samplesPerIntron: 2
+        samplesPerGroup: 2
         minCoverage: 20
 
 python3Path: 'python3'

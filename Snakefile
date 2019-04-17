@@ -99,7 +99,7 @@ rule clusterJunctions:
 	output:
 		junctionList = outFolder + "junctionList.txt",
 		clusters = outFolder + dataCode + "_perind_numers.counts.gz",
-		tempFiles = expand('{samples}.junc.{dataCode}.sorted.gz', samples = samples, dataCode = dataCode )
+		#tempFiles = expand('{samples}.junc.{dataCode}.sorted.gz', samples = samples, dataCode = dataCode )
 	shell:
                 'export PS1="";'
                 'source activate leafcutterPipeline;'
@@ -112,7 +112,7 @@ rule clusterJunctions:
 		'{python3Path} ../scripts/leafcutter_cluster_regtools.py '
 		'-j {output.junctionList} --minclureads {minCluReads} '
 		'--mincluratio {minCluRatio}  -o {outFolder}{dataCode} -l {intronMax};'
-		'rm {output.tempFiles}'
+		#'rm {output.tempFiles}'
 
 # run differential splicing
 rule leafcutterDS:
