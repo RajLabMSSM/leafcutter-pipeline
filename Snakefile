@@ -57,7 +57,7 @@ samples = pd.read_csv(metadata, sep = '\t')['sample']
 isChimera = "hpc.mssm.edu" in socket.getfqdn()
 
 if isChimera:
-	shell.prefix('export PS1="";source activate leafcutter-pipeline;ml R')
+	shell.prefix('export PS1="";source activate leafcutter-pipeline;ml R;')
 else:
 	shell.prefix('conda activate leafcutterpipeline;')
 
@@ -70,7 +70,9 @@ rule all:
 	input: 
 		outFolder + dataCode + "_shiny.RData",
 		outFolder + "config.yaml",
-		outFolder + dataCode + "_deltapsi_best.tsv"
+		outFolder + dataCode + "_deltapsi_best.tsv",
+                outFolder + dataCode + "_classifications.tsv",
+                outFolder + dataCode + "_summary.tsv"
 
 # index bams if needed
 rule indexBams:
@@ -115,9 +117,9 @@ rule clusterJunctions:
 		expand('junctions/{samples}.junc', samples = samples)
 	output:
 		junctionList = outFolder + "junctionList.txt",
-		clusters = outFolder + dataCode + "_perind_numers.counts.gz",
-		#tempFiles = expand('{samples}.junc.{dataCode}.sorted.gz', samples = samples, dataCode = dataCode )
+		clusters = outFolder + dataCode + "_perind_numers.counts.gz"
 	params:
+		tempFiles = expand('{samples}.junc.{dataCode}.sorted.gz', samples = samples, dataCode = dataCode ),
 		script = "../scripts/leafcutter_cluster_regtools.py"
 	shell:
                 'touch {output.junctionList};'
@@ -129,13 +131,12 @@ rule clusterJunctions:
 		'{python3Path} {params.script} '
 		'-j {output.junctionList} --minclureads {minCluReads} '
 		'--mincluratio {minCluRatio}  -o {outFolder}{dataCode} -l {intronMax};'
-		#'rm {output.tempFiles}'
+		'rm {params.tempFiles}'
 
 # run differential splicing
 rule leafcutterDS:
 	input:
-		clusters=outFolder + dataCode + "_perind_numers.counts.gz",
-		#tempFiles=expand('{samples}.junc.{dataCode}.sorted.gz', samples = samples, dataCode = dataCode )
+		clusters=outFolder + dataCode + "_perind_numers.counts.gz"
 	output:
 		support = outFolder + dataCode + "_ds_support.tsv",
 		sigClusters = outFolder + dataCode + "_cluster_significance.txt",
@@ -143,7 +144,6 @@ rule leafcutterDS:
 	params:
 		n_threads = leafcutterOpt['n_threads']
 	shell:	
-		#"rm {input.tempFiles};"
 		"Rscript ../scripts/sort_support.R "
 		"	--metadata {metadata} "
 		"	--dataCode {dataCode} "
@@ -202,3 +202,15 @@ rule deltaPSI:
                 "       --refCondition {refCondition} "
                 "       --altCondition {altCondition} "
                 "       --outFolder {outFolder} "
+
+rule classifyClusters:
+        input: app = outFolder + dataCode + "_shiny.RData"
+        output:
+                outFolder + dataCode + "_classifications.tsv",
+                outFolder + dataCode + "_summary.tsv"
+        params:
+                script = "../scripts/classify_clusters.R"
+        shell:
+                "Rscript {params.script} "
+                " -o {outFolder}/{dataCode} "
+                " {input} "
