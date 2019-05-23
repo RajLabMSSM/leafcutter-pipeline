@@ -31,7 +31,7 @@ outFile <- paste0(outFolder, "/", dataCode, "_ds_support.tsv")
 message("Creating leafcutter support file from provided metadata")
 message("-------------------------------------------------------")
 
-if( ! file.exists(outFile ) ){ stop("metadata does not exist!" ) }
+if( ! file.exists(metadata ) ){ stop("metadata does not exist!" ) }
 
 
 df <- read.table(metadata, header=TRUE, sep = "\t", stringsAsFactors = FALSE)
