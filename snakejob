@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+# -m {cluster.partition}"
+
+set -e
+
+if [ ! -d "cluster" ]; then
+  mkdir cluster
+fi
+
+curdir="$(pwd)"
+jname="$(basename $curdir)"
+
+config=$1
+
+if [ ! -e $config ]; then
+	config_file=config.yaml
+else
+	config_file=$config
+
+fi
+
+bsub=("bsub -K -J $jname:{rule}:{wildcards}"
+"-P acc_als-omics "
+"-q {cluster.queue} "
+"-n {cluster.cores} -R \"span[hosts=1] select[mem>{cluster.mem}]"
+"rusage[mem={cluster.mem}]\" -W {cluster.time} -L /bin/bash"
+"-oo cluster/{rule}:{wildcards}.stdout"
+"-eo cluster/{rule}:{wildcards}.stderr < ")
+
+snakemake -u ../cluster.yaml --cluster-sync "${bsub[*]}" \
+  --local-cores 4 --max-jobs-per-second 5 \
+  --jobs 100 \
+  -s ../Snakefile --configfile $config_file
+
