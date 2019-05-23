@@ -1,6 +1,7 @@
 #Jack Humphrey
 #2019
 
+#options(echo=TRUE)
 library(tidyverse)
 #library(leafcutter)
 library(optparse)
@@ -70,17 +71,17 @@ deltaPSI <- function(cluster, control_samples, case_samples){
 
 # get sample IDs - assumes only two groups
 control_samples <- meta$sample[meta$group == refCondition]
-case_samples <- meta$sample[meta$group != altCondition]
+case_samples <- meta$sample[meta$group == altCondition]
 
 # cluster_ids is vector of clusters
 dPSI_table <- purrr::map_df( clusters$clusterID, deltaPSI, control_samples = control_samples, case_samples = case_samples)
-
+#save.image("test.RData")
 # the deltaPSI values don't quite match those from leafviz, weirdly enough.
 # it looks like the meanPSI values do and the leaviz deltaPSIs aren't matching those
 dPSI_full <-
   introns %>%
-  select(-clusterID) %>%
-  cbind(dPSI_table) %>%  
+  mutate(intron = paste(chr, start, end, clusterID, sep = ":") ) %>%
+  left_join(dPSI_table, by = c("clusterID", "intron") )  %>%  
   rename(fitted_dPSI = "deltapsi")
 
 
@@ -96,5 +97,4 @@ dPSI_best <-
 # write out tables
 readr::write_tsv(dPSI_full, path = paste0(outFile, "_deltapsi_full.tsv" ) )
 readr::write_tsv(dPSI_best, path = paste0(outFile, "_deltapsi_best.tsv" ) )
-
 

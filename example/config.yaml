@@ -1,36 +1,45 @@
+#####################
+#Leafcutter Pipeline#
+#####################
 
-# needs to be on minerva
-#leafcutterPath: '/Users/jack/Software/leafcutter'
-leafcutterPath: '/hpc/users/humphj04/software/leafcutter'
 
-# now deprecated
-#ipython2Path: '/usr/bin/python'
-#python3Path: '/Users/jack/miniconda3/bin/python3'
-python3Path: 'python3'
+dataCode: 'kcnq2_run1'
 
-dataCode: 'TDP_example'
+metadata: 'samples.tsv'
 
-# samples.tsv is a list of sample names
-samples: 'samples.tsv'
-# bamSuffix - what to append to the sample name to get the BAM file name
-bamSuffix: '.bam'
+# dataCode will be appended to outFolder
+outFolder: 'results/'
 
-#ref: 'ref/gencode_hg38.gtf'
-
-inFolder: 'data/'
-
-outFolder: 'leafcutter_unstranded/'
-
+# differential splicing - set reference and alternate conditions
 refCondition: 'control'
 altCondition: 'tdp_kd'
 
-#refFolder: "/Users/jack/Software/GENCODE/"
+inFolder: 'data/'
+
+# bamSuffix - what to append to the sample name to get the BAM file name
+bamSuffix: '.bam'
+
+# how the stranding was done (0 = unstranded, 1 = first-strand/RF, 2, = second-strand/FR)
+# this assumes stranding same for every sample
+stranded: 0
+
+
+## Leafcutter settings ---------------------------------
+
+leafcutterPath: '/hpc/users/humphj04/software/leafcutter'
+
+leafcutter:
+        # clustering options
+        minCluRatio: 0.01
+        minCluReads: 50
+        intronMax: 100000
+        # ds options
+        samplesPerIntron: 2
+        samplesPerGroup: 2
+        minCoverage: 20
+
+python3Path: 'python3'
+
 refFolder: "/hpc/users/humphj04/GENCODE/"
 refFile: "gencode.v29.annotation.gtf.gz"
 refCode: "gencode_hg38_v29"
-
-# for regtools
-# (0 = unstranded, 1 = first-strand/RF, 2, = second-strand/FR)
-# Klim et al data is unstranded
-stranded: 0
-

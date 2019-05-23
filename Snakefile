@@ -61,8 +61,8 @@ rule all:
 	#input: outFolder + dataCode + "_ds_support.tsv"
 	input: 
 		outFolder + dataCode + "_shiny.RData",
-		outFolder + "config.yaml"
-
+		outFolder + "config.yaml",
+		outFolder + dataCode + "_deltapsi_best.tsv"
 # use regtools to extract junctions if not already completed
 rule extractJunctions:
 	input:
@@ -80,7 +80,7 @@ rule extractJunctions:
 # copy the config and samples files in to the outFolder for posterity
 rule copyConfig:
 	input: 
-		config = "config.yaml",
+		config = workflow.overwrite_configfile,
 		metadata = metadata
 
 	output: 
@@ -100,6 +100,8 @@ rule clusterJunctions:
 		junctionList = outFolder + "junctionList.txt",
 		clusters = outFolder + dataCode + "_perind_numers.counts.gz",
 		#tempFiles = expand('{samples}.junc.{dataCode}.sorted.gz', samples = samples, dataCode = dataCode )
+	params:
+		script = "../scripts/leafcutter_cluster_regtools.py"
 	shell:
                 'export PS1="";'
                 'source activate leafcutterPipeline;'
@@ -109,7 +111,7 @@ rule clusterJunctions:
 		'done;'
 		# from https://github.com/mdshw5/leafcutter/blob/master/scripts/leafcutter_cluster_regtools.py
 		# now lives inside the leafcutter pipeline repo 
-		'{python3Path} ../scripts/leafcutter_cluster_regtools.py '
+		'{python3Path} {params.script} '
 		'-j {output.junctionList} --minclureads {minCluReads} '
 		'--mincluratio {minCluRatio}  -o {outFolder}{dataCode} -l {intronMax};'
 		#'rm {output.tempFiles}'
@@ -123,6 +125,8 @@ rule leafcutterDS:
 		support = outFolder + dataCode + "_ds_support.tsv",
 		sigClusters = outFolder + dataCode + "_cluster_significance.txt",
 		effectSizes = outFolder + dataCode + "_effect_sizes.txt"
+	params:
+		n_threads = leafcutterOpt['n_threads']
 	shell:	
 		"ml R;"
 		#"rm {input.tempFiles};"
@@ -135,7 +139,7 @@ rule leafcutterDS:
 		";"
 		'Rscript {leafcutterPath}/scripts/leafcutter_ds.R '
 		'	--output_prefix {outFolder}{dataCode} '
-		'	--num_threads 1 '
+		'	--num_threads {params.n_threads} '
 		'	--min_samples_per_intron {samplesPerIntron} '
 		'	--min_samples_per_group {samplesPerGroup} '
 		'	--min_coverage {minCoverage} '
@@ -170,3 +174,19 @@ rule prepareShiny:
 		"-c {dataCode}" 
 
 
+rule deltaPSI:
+	input:
+		app = outFolder + dataCode + "_shiny.RData"
+	output:
+		outFolder + dataCode + "_deltapsi_best.tsv",
+		outFolder + dataCode + "_deltapsi_full.tsv"
+	params:
+		script = "../scripts/create_dPSI_table.R"
+	shell:
+		"ml R;"
+		"Rscript {params.script} "
+		"       --app {input.app} "
+                "       --dataCode {dataCode} "
+                "       --refCondition {refCondition} "
+                "       --altCondition {altCondition} "
+                "       --outFolder {outFolder} "

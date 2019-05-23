@@ -15,10 +15,10 @@ __default__:
 #   time: '90:00'
 #   mem: 3750
 #   cores: 1
-# leafcutterDS:
-#   time: '72:00'
-#   mem: 3750
-#   cores: 1
+leafcutterDS:
+   time: '120:00'
+   mem: 3750
+   cores: 4
 # createRefs:
 #   time: '24:00'
 # prepareShiny:
