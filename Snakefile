@@ -9,7 +9,7 @@
 
 import pandas as pd
 import os
-
+import socket
 # get variables out of config.yaml
 
 leafcutterPath = config['leafcutterPath']
@@ -53,6 +53,14 @@ minCoverage = leafcutterOpt["minCoverage"]
 # using pandas
 samples = pd.read_csv(metadata, sep = '\t')['sample']
 
+# Chimera specific options
+isChimera = "hpc.mssm.edu" in socket.getfqdn()
+
+if isChimera:
+	shell.prefix('export PS1="";source activate leafcutter-pipeline;ml R')
+else:
+	shell.prefix('conda activate leafcutterpipeline;')
+
 localrules: copyConfig
 
 rule all:
@@ -63,19 +71,28 @@ rule all:
 		outFolder + dataCode + "_shiny.RData",
 		outFolder + "config.yaml",
 		outFolder + dataCode + "_deltapsi_best.tsv"
+
+# index bams if needed
+rule indexBams:
+	input:
+		bam = inFolder + '{samples}' + bamSuffix
+	output:
+		inFolder + '{samples}' + bamSuffix + ".bai"
+	shell:
+		"samtools index {input.bam}"
+
 # use regtools to extract junctions if not already completed
 rule extractJunctions:
 	input:
-		inFolder + '{samples}' + bamSuffix
+		bam = inFolder + '{samples}' + bamSuffix,
+		bai = inFolder + '{samples}' + bamSuffix + ".bai"
 	output:
 		'junctions/{samples}.junc'
 	shell:
-		'export PS1="";'
-		"source activate leafcutterPipeline;"
-		"samtools index {input};"
+		#"samtools index {input};"	redundant if indexes are present
 		#"regtools junctions extract -a 8 -m 50 -M 500000 -s {stranded} -o {output} {input}"
 		# conda version of regtools uses i and I instead of m and M 
-		"regtools junctions extract -a 8 -i 50 -I 500000 -s {stranded} -o {output} {input}"
+		"regtools junctions extract -a 8 -i 50 -I 500000 -s {stranded} -o {output} {input.bam}"
 
 # copy the config and samples files in to the outFolder for posterity
 rule copyConfig:
@@ -103,9 +120,7 @@ rule clusterJunctions:
 	params:
 		script = "../scripts/leafcutter_cluster_regtools.py"
 	shell:
-                'export PS1="";'
-                'source activate leafcutterPipeline;'
-		'touch {output.junctionList};'
+                'touch {output.junctionList};'
 		'for i in {input};'
 		'do echo $i >> {output.junctionList};'
 		'done;'
@@ -128,7 +143,6 @@ rule leafcutterDS:
 	params:
 		n_threads = leafcutterOpt['n_threads']
 	shell:	
-		"ml R;"
 		#"rm {input.tempFiles};"
 		"Rscript ../scripts/sort_support.R "
 		"	--metadata {metadata} "
@@ -165,7 +179,6 @@ rule prepareShiny:
 	output:
 		shinyData = outFolder + dataCode + "_shiny.RData"
 	shell:
-		"ml R;"
 		"Rscript {leafcutterPath}/leafviz/prepare_results.R "
 		"{input.clusterCounts} {input.sigClusters} {input.effectSizes} "
 		"{refFolder}{refCode} "
@@ -183,7 +196,6 @@ rule deltaPSI:
 	params:
 		script = "../scripts/create_dPSI_table.R"
 	shell:
-		"ml R;"
 		"Rscript {params.script} "
 		"       --app {input.app} "
                 "       --dataCode {dataCode} "
