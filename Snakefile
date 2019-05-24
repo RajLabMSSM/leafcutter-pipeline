@@ -72,7 +72,8 @@ rule all:
 		outFolder + "config.yaml",
 		outFolder + dataCode + "_deltapsi_best.tsv",
                 outFolder + dataCode + "_classifications.tsv",
-                outFolder + dataCode + "_summary.tsv"
+                outFolder + dataCode + "_summary.tsv",
+		outFolder + dataCode + "_cassette_inclusion.tsv"
 
 # index bams if needed
 rule indexBams:
@@ -204,13 +205,16 @@ rule deltaPSI:
                 "       --outFolder {outFolder} "
 
 rule classifyClusters:
-        input: app = outFolder + dataCode + "_shiny.RData"
-        output:
-                outFolder + dataCode + "_classifications.tsv",
-                outFolder + dataCode + "_summary.tsv"
-        params:
-                script = "../scripts/classify_clusters.R"
-        shell:
-                "Rscript {params.script} "
-                " -o {outFolder}/{dataCode} "
-                " {input} "
+	input: 
+		app = outFolder + dataCode + "_shiny.RData",
+		psi_results = outFolder + dataCode + "_deltapsi_full.tsv"
+	output:
+		outFolder + dataCode + "_classifications.tsv",
+		outFolder + dataCode + "_summary.tsv",
+		outFolder + dataCode + "_cassette_inclusion.tsv"
+	params:
+		script = "../scripts/classify_clusters.R"
+	shell:
+		"Rscript {params.script} "
+		" -o {outFolder}/{dataCode} "
+                " {input.app} "
