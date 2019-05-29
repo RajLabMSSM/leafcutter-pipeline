@@ -33,11 +33,12 @@ leafcutter:
         minCluRatio: 0.01
         minCluReads: 50
         intronMax: 100000
+        n_threads: 4
         # ds options
         samplesPerIntron: 2
         samplesPerGroup: 2
         minCoverage: 20
-
+        n_threads: 4
 python3Path: 'python3'
 
 refFolder: "/hpc/users/humphj04/GENCODE/"

@@ -36,6 +36,12 @@ if( ! file.exists(metadata ) ){ stop("metadata does not exist!" ) }
 
 df <- read.table(metadata, header=TRUE, sep = "\t", stringsAsFactors = FALSE)
 
+# drop rapid_path if present
+
+if( "rapid_path" %in% names(df) ){
+df$rapid_path <- NULL
+}
+
 if( names(df)[2] != "condition" ){
 	stop("the second column must be \"condition\" ")
 }
