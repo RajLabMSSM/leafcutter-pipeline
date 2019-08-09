@@ -12,7 +12,9 @@ option_list <- list(
     make_option(c('--dataCode'), help='', default = "example"),
     make_option(c('--refCondition'), help='', default = "control"),
     make_option(c('--altCondition'), help='', default="case"),
-	make_option(c('--outFolder'), help='', default = "leafcutter/")
+	make_option(c('--outFolder'), help='', default = "leafcutter/"),
+	make_option(c('--junctionMode'), help = 'whether junctions are from regtools or from RAPiD', default = "RAPiD"),
+	make_option(c('--juncSuffix'), help='suffix after sample name to name junctions', default = '')
 
 )
 
@@ -25,6 +27,8 @@ dataCode <- opt$dataCode
 refCondition <- opt$refCondition
 altCondition <- opt$altCondition
 outFolder <- opt$outFolder
+juncSuffix <- opt$juncSuffix
+junctionMode <- opt$junctionMode
 
 outFile <- paste0(outFolder, "/", dataCode, "_ds_support.tsv")
 
@@ -66,9 +70,18 @@ if(nrow(df) == 0){
 	stop("table is empty")
 }
 
-print(df)
 
+# if junctions are from regtools, then the sample IDs will be consistent in the junction counts matrix
+# if they are from RAPiD, the sample IDs in the counts matrix will have the bamSuffix included.
+
+if( junctionMode == "RAPiD"){
+juncSuffix <- gsub('\\.junc', '', juncSuffix)
+
+df$sample <- paste0(df$sample, juncSuffix)
+}
 # write out
+
+print(df)
 
 message("creating support file")
 message(paste0("saving as ", outFile) )

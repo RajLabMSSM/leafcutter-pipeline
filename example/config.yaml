@@ -19,12 +19,20 @@ inFolder: 'data/'
 # bamSuffix - what to append to the sample name to get the BAM file name
 bamSuffix: '.bam'
 
+# juncSuffix
+# for samples processed with RAPiD use filtered junctions : {sample}.Aligned.Quality.Sorted.bam.junc 
+juncSuffix: '.junc' 
+
 # how the stranding was done (0 = unstranded, 1 = first-strand/RF, 2, = second-strand/FR)
 # this assumes stranding same for every sample
 stranded: 0
 
 
 ## Leafcutter settings ---------------------------------
+
+# cluster using regtools junctions or STAR-like junctions
+# regtools or rapid
+clusterRegtools: True
 
 leafcutterPath: '/hpc/users/humphj04/software/leafcutter'
 

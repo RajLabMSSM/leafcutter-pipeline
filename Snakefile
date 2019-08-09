@@ -13,9 +13,8 @@ import socket
 # get variables out of config.yaml
 
 leafcutterPath = config['leafcutterPath']
-#python2Path = config['python2Path']
+python2Path = config['python2Path']
 python3Path = config['python3Path']
-
 dataCode = config['dataCode']
 
 print(dataCode)
@@ -29,6 +28,8 @@ print(outFolder)
 
 metadata = config['metadata']
 bamSuffix = config['bamSuffix']
+# default is '.junc'; for samples processed with RAPiD use filtered junctions : '.Aligned.Quality.Sorted.bam.junc' 
+juncSuffix = config['juncSuffix']
 
 refCondition = config['refCondition']
 altCondition = config['altCondition']
@@ -56,10 +57,24 @@ samples = pd.read_csv(metadata, sep = '\t')['sample']
 # Chimera specific options
 isChimera = "hpc.mssm.edu" in socket.getfqdn()
 
-if isChimera:
-	shell.prefix('export PS1="";source activate leafcutter-pipeline;ml R;')
-else:
-	shell.prefix('conda activate leafcutterpipeline;')
+# not sure if this works when running in serial on interactive node
+#if isChimera:
+#	shell.prefix('export PS1="";source activate leafcutter-pipeline;ml R;')
+#else:
+#shell.prefix('conda activate leafcutterpipeline;')
+
+# default R is now 3.6 - doesn't support leafcutter yet
+shell.prefix('ml R/3.5.3;')
+
+clusterRegtools = config["clusterRegtools"]
+
+if clusterRegtools == True:
+        clusterScript = python3Path + " scripts/leafcutter_cluster_regtools.py"
+	junctionMode = "regtools"
+else:        
+        clusterScript = python2Path + " scripts/leafcutter_cluster.py"
+	junctionMode = "RAPiD"
+
 
 localrules: copyConfig
 
@@ -90,7 +105,7 @@ rule extractJunctions:
 		bam = inFolder + '{samples}' + bamSuffix,
 		bai = inFolder + '{samples}' + bamSuffix + ".bai"
 	output:
-		'junctions/{samples}.junc'
+		'junctions/{samples}' + juncSuffix
 	shell:
 		#"samtools index {input};"	redundant if indexes are present
 		#"regtools junctions extract -a 8 -m 50 -M 500000 -s {stranded} -o {output} {input}"
@@ -110,18 +125,18 @@ rule copyConfig:
 		"cp {input.config} {output.config};"
 		"cp {input.metadata} {output.metadata}"
 
-
 # Yang's script to cluster regtools junctions still uses python2
 # I took an updated version from a github fork and fixed the bugs
 rule clusterJunctions:
 	input: 
-		expand('junctions/{samples}.junc', samples = samples)
+		expand('junctions/{samples}{junc}', samples = samples, junc = juncSuffix)
 	output:
 		junctionList = outFolder + "junctionList.txt",
 		clusters = outFolder + dataCode + "_perind_numers.counts.gz"
 	params:
-		tempFiles = expand('{samples}.junc.{dataCode}.sorted.gz', samples = samples, dataCode = dataCode ),
-		script = "../scripts/leafcutter_cluster_regtools.py"
+		tempFiles = expand('{samples}{junc}.{dataCode}.sorted.gz', samples = samples, junc = juncSuffix, dataCode = dataCode ),
+		#script = "scripts/leafcutter_cluster_regtools.py"
+		script = clusterScript
 	shell:
                 'touch {output.junctionList};'
 		'for i in {input};'
@@ -129,29 +144,40 @@ rule clusterJunctions:
 		'done;'
 		# from https://github.com/mdshw5/leafcutter/blob/master/scripts/leafcutter_cluster_regtools.py
 		# now lives inside the leafcutter pipeline repo 
-		'{python3Path} {params.script} '
+		'{params.script} '
 		'-j {output.junctionList} --minclureads {minCluReads} '
 		'--mincluratio {minCluRatio}  -o {outFolder}{dataCode} -l {intronMax};'
 		'rm {params.tempFiles}'
 
-# run differential splicing
-rule leafcutterDS:
-	input:
-		clusters=outFolder + dataCode + "_perind_numers.counts.gz"
-	output:
-		support = outFolder + dataCode + "_ds_support.tsv",
-		sigClusters = outFolder + dataCode + "_cluster_significance.txt",
-		effectSizes = outFolder + dataCode + "_effect_sizes.txt"
-	params:
-		n_threads = leafcutterOpt['n_threads']
-	shell:	
-		"Rscript ../scripts/sort_support.R "
+# prepare support table the way leafcutter likes it
+# be wary of sample names - sometimes the juncSuffix will be appended
+rule prepareMeta:
+	input: metadata
+	output: support = outFolder + dataCode + "_ds_support.tsv"
+	params: js = juncSuffix
+	shell:
+		"Rscript scripts/sort_support.R "
 		"	--metadata {metadata} "
 		"	--dataCode {dataCode} "
 		"	--refCondition {refCondition} "
 		"	--altCondition {altCondition} "
 		"	--outFolder {outFolder} "
+		"	--junctionMode {junctionMode} "
+		"       --juncSuffix \"{params.js}\" "
 		";"
+
+
+# run differential splicing
+rule leafcutterDS:
+	input:
+		support = outFolder + dataCode + "_ds_support.tsv",
+		clusters = outFolder + dataCode + "_perind_numers.counts.gz"
+	output:
+		sigClusters = outFolder + dataCode + "_cluster_significance.txt",
+		effectSizes = outFolder + dataCode + "_effect_sizes.txt"
+	params:
+		n_threads = leafcutterOpt['n_threads']
+	shell:	
 		'Rscript {leafcutterPath}/scripts/leafcutter_ds.R '
 		'	--output_prefix {outFolder}{dataCode} '
 		'	--num_threads {params.n_threads} '
@@ -159,7 +185,7 @@ rule leafcutterDS:
 		'	--min_samples_per_group {samplesPerGroup} '
 		'	--min_coverage {minCoverage} '
 		'	{input.clusters} '
-		'	{output.support} '
+		'	{input.support} '
 
 # for the Shiny app 
 rule createRefs:
@@ -195,7 +221,7 @@ rule deltaPSI:
 		outFolder + dataCode + "_deltapsi_best.tsv",
 		outFolder + dataCode + "_deltapsi_full.tsv"
 	params:
-		script = "../scripts/create_dPSI_table.R"
+		script = "scripts/create_dPSI_table.R"
 	shell:
 		"Rscript {params.script} "
 		"       --app {input.app} "
@@ -213,7 +239,7 @@ rule classifyClusters:
 		outFolder + dataCode + "_summary.tsv",
 		outFolder + dataCode + "_cassette_inclusion.tsv"
 	params:
-		script = "../scripts/classify_clusters.R"
+		script = "scripts/classify_clusters.R"
 	shell:
 		"Rscript {params.script} "
 		" -o {outFolder}/{dataCode} "
