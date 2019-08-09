@@ -6,8 +6,19 @@ Written by Jack Humphrey
 
 1. clone the repo
 
+2. install leafcutter
+
+```
+ml R/3.6.0
+R
+install.packages("remotes")
+remotes::install_github("stan-dev/rstantools")
+remotes::install_github("davidaknowles/leafcutter/leafcutter", ref = "stanfixagain")
+```
 
 ## Dependencies
+
+TODO: give full conda recipe
 
 Everything is managed through conda. The plan is to have a minerva-wide conda environment which will contain all the dependencies, both python and R packages.
 
