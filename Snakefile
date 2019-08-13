@@ -24,6 +24,11 @@ inFolder = config['inFolder']
 outFolder = config['outFolder'] + config['dataCode'] + '/'
 stranded = config['stranded']
 
+if stranded != 0:
+	strandParam = "--strand"
+else:
+	strandParam = ""
+
 print(outFolder)
 
 metadata = config['metadata']
@@ -64,7 +69,7 @@ isChimera = "hpc.mssm.edu" in socket.getfqdn()
 #shell.prefix('conda activate leafcutterpipeline;')
 
 # default R is now 3.6 - doesn't support leafcutter yet
-shell.prefix('ml R/3.5.3;')
+shell.prefix('ml R/3.6.0;')
 
 clusterRegtools = config["clusterRegtools"]
 
@@ -72,7 +77,7 @@ if clusterRegtools == True:
         clusterScript = python3Path + " scripts/leafcutter_cluster_regtools.py"
 	junctionMode = "regtools"
 else:        
-        clusterScript = python2Path + " scripts/leafcutter_cluster.py"
+        clusterScript = python2Path + " scripts/leafcutter_cluster.py" 
 	junctionMode = "RAPiD"
 
 
@@ -112,6 +117,18 @@ rule extractJunctions:
 		# conda version of regtools uses i and I instead of m and M 
 		"regtools junctions extract -a 8 -i 50 -I 500000 -s {stranded} -o {output} {input.bam}"
 
+
+# remove weird contigs that cause add_chr() to break by adding "chr" to normal chr names
+rule stripContigs:
+	input:
+		'junctions/' + '{samples}' + juncSuffix
+	output:
+		'junctions/' + '{samples}' + juncSuffix + '.nocontigs'
+	shell:
+		"cat {input} |"
+		"awk \'$1 ~/^chr/\' "
+		" > {output} "
+
 # copy the config and samples files in to the outFolder for posterity
 rule copyConfig:
 	input: 
@@ -127,16 +144,18 @@ rule copyConfig:
 
 # Yang's script to cluster regtools junctions still uses python2
 # I took an updated version from a github fork and fixed the bugs
+# for samples processed with RAPiD just use the junctions from that and run the classic leafcutter_cluster.py
 rule clusterJunctions:
 	input: 
-		expand('junctions/{samples}{junc}', samples = samples, junc = juncSuffix)
+		expand('junctions/{samples}{junc}.nocontigs', samples = samples, junc = juncSuffix)
 	output:
 		junctionList = outFolder + "junctionList.txt",
 		clusters = outFolder + dataCode + "_perind_numers.counts.gz"
 	params:
-		tempFiles = expand('{samples}{junc}.{dataCode}.sorted.gz', samples = samples, junc = juncSuffix, dataCode = dataCode ),
+		tempFiles = expand('{samples}{junc}.nocontigs.{dataCode}.sorted.gz', samples = samples, junc = juncSuffix, dataCode = dataCode ),
 		#script = "scripts/leafcutter_cluster_regtools.py"
-		script = clusterScript
+		script = clusterScript,
+		strand = strandParam
 	shell:
                 'touch {output.junctionList};'
 		'for i in {input};'
@@ -146,6 +165,7 @@ rule clusterJunctions:
 		# now lives inside the leafcutter pipeline repo 
 		'{params.script} '
 		'-j {output.junctionList} --minclureads {minCluReads} '
+		' {params.strand} '
 		'--mincluratio {minCluRatio}  -o {outFolder}{dataCode} -l {intronMax};'
 		'rm {params.tempFiles}'
 
