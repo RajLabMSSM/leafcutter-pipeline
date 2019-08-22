@@ -3,16 +3,16 @@
 #####################
 
 
-dataCode: 'kcnq2_run1'
+dataCode: 'example'
 
-metadata: 'samples.tsv'
+metadata: 'Melamed_samples.tsv'
 
 # dataCode will be appended to outFolder
 outFolder: 'results/'
 
 # differential splicing - set reference and alternate conditions
-refCondition: 'control'
-altCondition: 'tdp_kd'
+refCondition: 'siControl'
+altCondition: 'siTDP-43'
 
 inFolder: 'data/'
 
@@ -21,18 +21,18 @@ bamSuffix: '.bam'
 
 # juncSuffix
 # for samples processed with RAPiD use filtered junctions : {sample}.Aligned.Quality.Sorted.bam.junc 
-juncSuffix: '.junc' 
+juncSuffix: '.Aligned.Quality.Sorted.bam.junc' 
 
 # how the stranding was done (0 = unstranded, 1 = first-strand/RF, 2, = second-strand/FR)
 # this assumes stranding same for every sample
-stranded: 0
+stranded: 2
 
 
 ## Leafcutter settings ---------------------------------
 
 # cluster using regtools junctions or STAR-like junctions
 # regtools or rapid
-clusterRegtools: True
+clusterRegtools: False
 
 leafcutterPath: '/hpc/users/humphj04/software/leafcutter'
 
@@ -48,6 +48,7 @@ leafcutter:
         minCoverage: 20
         n_threads: 4
 python3Path: 'python3'
+python2Path: 'python2'
 
 refFolder: "/sc/orga/projects/ad-omics/data/references/hg38_reference/GENCODE/"
 refFile: "gencode.v30.annotation.gtf.gz"
