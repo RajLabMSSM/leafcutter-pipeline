@@ -16,6 +16,9 @@ remotes::install_github("stan-dev/rstantools")
 remotes::install_github("davidaknowles/leafcutter/leafcutter", ref = "stanfixagain")
 ```
 
+3. clone the leafcutter repo to the cluster. A path to the directory will be needed for the `config.yaml`.
+
+
 ## Dependencies
 
 TODO: give full conda recipe
@@ -57,10 +60,18 @@ TODO: create an RMarkdown/plain text report file summarising the run and the res
 For differential splicing analysis between two conditions, the reference condition **refCondition** and alternate condition **altCondition** must be set.
 
 
+### Starting with BAM files
+
 You need to then have a folder where all the BAMs are kept. If the BAMs are split across many folders, then create a single folder with symbolic links to each BAM. The pipeline requires that the names of each BAM are in the format:
 	`<sampleID><bamSuffix>`
 You specify the `bamSuffix` in the *config.yaml*
-So a sample with ID 'sample1' and a bam file 'sample1_aligned.bam' would have a `bamSuffix` of '_aligned.bam'. 
+So a sample with ID 'sample1' and a bam file 'sample1_aligned.bam' would have a `bamSuffix` of '_aligned.bam'
+
+### Starting with junction files
+
+If you already have junction files prepared, then copy or symlink them to a folder called /junctions within the pipeline directory.
+If the junctions were created using regtools, then set leafcutter clusterRegtools: to 'True'. 
+If the junctions were created by leafcutter's bam2junc.sh, as is the case for RAPiD, then keep it set to 'False'.
 
 
 ## Running on Chimera
