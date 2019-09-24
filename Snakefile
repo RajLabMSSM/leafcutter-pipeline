@@ -63,19 +63,20 @@ samples = pd.read_csv(metadata, sep = '\t')['sample']
 isChimera = "hpc.mssm.edu" in socket.getfqdn()
 
 # not sure if this works when running in serial on interactive node
-#if isChimera:
-#	shell.prefix('export PS1="";source activate leafcutter-pipeline;ml R;')
+if isChimera:
+	shell.prefix('export PS1="";source activate leafcutter-pipeline;ml R/3.6.0;')
 #else:
 #shell.prefix('conda activate leafcutterpipeline;')
 
 # default R is now 3.6 - doesn't support leafcutter yet
-shell.prefix('ml R/3.6.0;')
+#shell.prefix('ml R/3.6.0;')
 
 clusterRegtools = config["clusterRegtools"]
 
 if clusterRegtools == True:
         clusterScript = python3Path + " scripts/leafcutter_cluster_regtools.py"
 	junctionMode = "regtools"
+	strandParam = "" # strandParam only needed for normal clustering
 else:        
         clusterScript = python2Path + " scripts/leafcutter_cluster.py" 
 	junctionMode = "RAPiD"
