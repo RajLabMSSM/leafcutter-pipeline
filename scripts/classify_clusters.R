@@ -247,8 +247,8 @@ inclusion <-
 	# work out central exon coordinates
 	exon_start <- min(children$end)
 	exon_end <- max(children$start)
-	exon_coords <- paste0(children$chr[1], ":", exon_start, "-", exon_end )
-	intron_coords <- paste0(parent$chr, ":", parent$start, "-", parent$end )
+	exon_coords <- paste0(children$chr[1], ":", exon_start, "-", (exon_end -1) )
+	intron_coords <- paste0(parent$chr, ":", parent$start, "-", (parent$end -1) )
 	tibble(clusterID = clu, exon_coords, intron_coords, control_inclusion = control_inclusion, case_inclusion = case_inclusion, delta_inclusion = delta_inclusion )
 	
 })
