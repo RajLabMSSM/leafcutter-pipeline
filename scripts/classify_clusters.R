@@ -232,6 +232,8 @@ inclusion <-
 	clu <- .x
 
 	psi <- filter(psi_full, clusterID == clu)
+	# correct off-by-one error in junction ends
+	psi$end <- psi$end - 1
 	psi$length <- psi$end - psi$start
 	# define parent junction as longest junction
 	parent <- psi[psi$length == max(psi$length),]
@@ -247,8 +249,10 @@ inclusion <-
 	# work out central exon coordinates
 	exon_start <- min(children$end)
 	exon_end <- max(children$start)
-	exon_coords <- paste0(children$chr[1], ":", exon_start, "-", (exon_end -1) )
-	intron_coords <- paste0(parent$chr, ":", parent$start, "-", (parent$end -1) )
+	exon_coords <- paste0(children$chr[1], ":", exon_start, "-", (exon_end) )
+	intron_coords <- paste0(parent$chr, ":", parent$start, "-", (parent$end) )
+	
+	# return table
 	tibble(clusterID = clu, exon_coords, intron_coords, control_inclusion = control_inclusion, case_inclusion = case_inclusion, delta_inclusion = delta_inclusion )
 	
 })
