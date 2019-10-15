@@ -82,7 +82,7 @@ else:
 	junctionMode = "RAPiD"
 
 
-localrules: copyConfig
+localrules: copyConfig, writeJunctionList
 
 rule all:
 	#input: outFolder + "junctionList.txt"
@@ -143,32 +143,50 @@ rule copyConfig:
 		"cp {input.config} {output.config};"
 		"cp {input.metadata} {output.metadata}"
 
+# write junction list to file in python rather than bash
+# bash has limit on length of shell command - 1000 samples in an array doesn't work.
+rule writeJunctionList:
+	input:
+		juncFiles = expand('junctions/{samples}{junc}.nocontigs', samples = samples, junc = juncSuffix)
+	output:
+		junctionList = outFolder + "junctionList.txt",
+		tempFileList = outFolder + "tempFileList.txt"
+	params:
+		tempFiles = expand('{samples}{junc}.nocontigs.{dataCode}.sorted.gz', samples = samples, junc = juncSuffix, dataCode = dataCode )
+	run:
+		# write juncFiles to junctionList, tempFiles to tempFiles list
+		with open(output.junctionList, 'w') as f:
+			for item in input.juncFiles:
+				f.write("%s\n" % item)
+		with open(output.tempFileList, 'w') as f:
+			for item in params.tempFiles:
+				f.write("%s\n" % item)
 # Yang's script to cluster regtools junctions still uses python2
 # I took an updated version from a github fork and fixed the bugs
 # for samples processed with RAPiD just use the junctions from that and run the classic leafcutter_cluster.py
 rule clusterJunctions:
 	input: 
-		expand('junctions/{samples}{junc}.nocontigs', samples = samples, junc = juncSuffix)
-	output:
 		junctionList = outFolder + "junctionList.txt",
+		tempFileList = outFolder + "tempFileList.txt"
+	output:
 		clusters = outFolder + dataCode + "_perind_numers.counts.gz"
 	params:
-		tempFiles = expand('{samples}{junc}.nocontigs.{dataCode}.sorted.gz', samples = samples, junc = juncSuffix, dataCode = dataCode ),
 		#script = "scripts/leafcutter_cluster_regtools.py"
 		script = clusterScript,
 		strand = strandParam
 	shell:
-                'touch {output.junctionList};'
-		'for i in {input};'
-		'do echo $i >> {output.junctionList};'
-		'done;'
+		#'touch {output.junctionList};'
+		#'for i in {input};'
+		#'do echo $i >> {output.junctionList};'
+		#'done;'
 		# from https://github.com/mdshw5/leafcutter/blob/master/scripts/leafcutter_cluster_regtools.py
 		# now lives inside the leafcutter pipeline repo 
 		'{params.script} '
-		'-j {output.junctionList} --minclureads {minCluReads} '
+		'-j {input.junctionList} --minclureads {minCluReads} '
 		' {params.strand} '
 		'--mincluratio {minCluRatio}  -o {outFolder}{dataCode} -l {intronMax};'
-		'rm {params.tempFiles}'
+		# remove temporary files
+		'for i in $(cat {input.tempFileList}); do rm $i; done'
 
 # prepare support table the way leafcutter likes it
 # be wary of sample names - sometimes the juncSuffix will be appended
