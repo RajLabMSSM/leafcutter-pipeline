@@ -13,7 +13,8 @@ ml R/3.6.0
 R
 install.packages("remotes")
 remotes::install_github("stan-dev/rstantools")
-remotes::install_github("davidaknowles/leafcutter/leafcutter", ref = "stanfixagain")
+# adds quantify PSI function
+remotes::install_github("davidaknowles/leafcutter/leafcutter", ref = "psi_2019")
 ```
 
 3. clone the leafcutter repo to the cluster. A path to the directory will be needed for the `config.yaml`.
@@ -25,15 +26,16 @@ TODO: give full conda recipe
 
 Everything is managed through conda. The plan is to have a minerva-wide conda environment which will contain all the dependencies, both python and R packages.
 
+`conda create -c bioconda -c conda-forge -n leafcutter-pipeline python=3.6 snakemake samtools regtools=0.5.0`
+
 Then you simply type:
 
-`conda activate leafcutterPipeline`
+`conda activate leafcutter-pipeline`
 
 Test this all works by 
 
 ```
-cd example/
-./snakejobs -n
+snakemake -s Snakefile --configfile example/config.yaml 
 ```
 
 -n specifies a dry run, so none of the scripts are executed.

@@ -94,8 +94,8 @@ rule all:
 		outFolder + dataCode + "_deltapsi_best.tsv",
                 outFolder + dataCode + "_classifications.tsv",
                 outFolder + dataCode + "_summary.tsv",
-		outFolder + dataCode + "_cassette_inclusion.tsv"
-
+		outFolder + dataCode + "_cassette_inclusion.tsv",
+		outFolder + dataCode + "_residual.counts.gz"
 # index bams if needed
 rule indexBams:
 	input:
@@ -283,3 +283,19 @@ rule classifyClusters:
 		"Rscript {params.script} "
 		" -o {outFolder}/{dataCode} "
                 " {input.app} "
+
+rule quantifyPSI:
+	input:	
+		support = outFolder + dataCode + "_ds_support.tsv",
+		counts = outFolder + dataCode + "_perind_numers.counts.gz"
+	output:
+		outFolder + dataCode + "_residual.counts.gz",
+	params:
+		script = "scripts/quantify_PSI.R",
+		n_threads = leafcutterOpt['n_threads']
+	shell:
+		"Rscript {params.script} "
+		" -c {input.support} "
+		" -p {params.n_threads} "
+		" -o {output} "
+		" {input.counts} "

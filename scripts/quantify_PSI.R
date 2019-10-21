@@ -1,4 +1,6 @@
+#!/usr/bin/env Rscript
 library(optparse)
+
 arguments <- parse_args(OptionParser(usage = "%prog [options] counts_file", description="LeafCutter PSI quantification command line tool. Required inputs:\n <counts_file>: Intron usage counts file. Must be .txt or .txt.gz, output from clustering pipeline.\n <confounders_file>: ",option_list=list(
   make_option(c("-c","--confounders_file"), default=NULL, help="One+K column file: 1. sample names (must match column names in counts_file), 2. Additional columns are used to specify confounders, e.g. batch/sex/age. Numeric columns will be treated as continuous, so use e.g. batch1, batch2, batch3 rather than 1, 2, 3 if you want a categorical variable."),
   make_option(c("-o","--output_file"), default = "leafcutter_psi.txt.gz", help="The output file, will be gzipped [default %default]"),
@@ -8,15 +10,7 @@ arguments <- parse_args(OptionParser(usage = "%prog [options] counts_file", desc
   make_option(c("--seed"), default=12345, help="Random seed if using random initialization."))),
   positional_arguments = 1)
 
-stopifnot(file.exists("quantify_PSI_functions.R"))
-source("quantify_PSI_functions.R")
-
 library(leafcutter)
-library(rstan)
-library(foreach)
-library(dplyr)
-library(magrittr)
-
 
 opt=arguments$opt
 counts_file=arguments$args[1]
@@ -53,7 +47,7 @@ print(opt)
 
 cat("Running PSI quantification\n")
 x=cbind(intercept=1,confounders)
-psi_matrix <- quantify_psi(counts, x, protected=1, timeout=opt$timeout, init=opt$init, seed=opt$seed ) 
+psi_matrix <- quantify_psi(counts, x, protected=1, timeout=opt$timeout, init=opt$init, seed=opt$seed , debug = FALSE) 
 
 stopifnot(!is.null(psi_matrix))
 
@@ -63,3 +57,4 @@ write.table(psi_matrix, gz, quote=F, sep="\t",col.names = T,row.names = T)
 close(gz)
 
 cat("All done, exiting\n")
+
