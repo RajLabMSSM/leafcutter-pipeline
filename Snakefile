@@ -76,6 +76,7 @@ clusterRegtools = config["clusterRegtools"]
 if clusterRegtools == True:
         clusterScript = python3Path + " scripts/leafcutter_cluster_regtools.py"
 	junctionMode = "regtools"
+	juncSuffix = ".junc" # enforce this
 	strandParam = "" # strandParam only needed for normal clustering
 else:        
         clusterScript = python2Path + " scripts/leafcutter_cluster.py" 

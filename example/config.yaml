@@ -5,23 +5,23 @@
 
 dataCode: 'example'
 
-metadata: 'Melamed_samples.tsv'
+metadata: 'example/samples.tsv'
 
 # dataCode will be appended to outFolder
 outFolder: 'results/'
 
 # differential splicing - set reference and alternate conditions
-refCondition: 'siControl'
-altCondition: 'siTDP-43'
+refCondition: 'control'
+altCondition: 'tdp_kd'
 
-inFolder: 'data/'
+inFolder: 'example/data/'
 
 # bamSuffix - what to append to the sample name to get the BAM file name
 bamSuffix: '.bam'
 
 # juncSuffix
 # for samples processed with RAPiD use filtered junctions : {sample}.Aligned.Quality.Sorted.bam.junc 
-juncSuffix: '.Aligned.Quality.Sorted.bam.junc' 
+juncSuffix: '.junc' 
 
 # how the stranding was done (0 = unstranded, 1 = first-strand/RF, 2, = second-strand/FR)
 # this assumes stranding same for every sample
@@ -32,7 +32,7 @@ stranded: 2
 
 # cluster using regtools junctions or STAR-like junctions
 # regtools or rapid
-clusterRegtools: False
+clusterRegtools: True
 
 leafcutterPath: '/hpc/users/humphj04/software/leafcutter'
 

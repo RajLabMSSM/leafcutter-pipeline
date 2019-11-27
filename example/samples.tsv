@@ -1,8 +1,8 @@
-sample	condition
-TDP43_knockdown_1_unique_kcnq2	tdp_kd
-TDP43_knockdown_2_unique_kcnq2	tdp_kd
-TDP43_knockdown_3_unique_kcnq2	tdp_kd
-control_scramble_1_unique_kcnq2	control
-control_scramble_2_unique_kcnq2	control
-control_scramble_3_unique_kcnq2	control
+sample	condition	type
+TDP43_knockdown_1_unique_kcnq2	tdp_kd	A
+TDP43_knockdown_2_unique_kcnq2	tdp_kd	B
+TDP43_knockdown_3_unique_kcnq2	tdp_kd	B
+control_scramble_1_unique_kcnq2	control	A
+control_scramble_2_unique_kcnq2	control	B
+control_scramble_3_unique_kcnq2	control	B
 

@@ -14,8 +14,8 @@ option_list <- list(
     make_option(c('--altCondition'), help='', default="case"),
 	make_option(c('--outFolder'), help='', default = "leafcutter/"),
 	make_option(c('--junctionMode'), help = 'whether junctions are from regtools or from RAPiD', default = "RAPiD"),
-	make_option(c('--juncSuffix'), help='suffix after sample name to name junctions', default = '')
-
+	make_option(c('--juncSuffix'), help='suffix after sample name to name junctions', default = ''),
+	make_option(c('--permutation'), action = "store_true", help = "whether to permute condition column", default = FALSE)
 )
 
 option.parser <- OptionParser(option_list=option_list)
@@ -29,6 +29,7 @@ altCondition <- opt$altCondition
 outFolder <- opt$outFolder
 juncSuffix <- opt$juncSuffix
 junctionMode <- opt$junctionMode
+permutation <- opt$permutation
 
 outFile <- paste0(outFolder, "/", dataCode, "_ds_support.tsv")
 
@@ -79,6 +80,17 @@ juncSuffix <- gsub('\\.junc', '', juncSuffix)
 
 df$sample <- paste0(df$sample, juncSuffix)
 }
+
+# permutation
+
+if(permutation == TRUE){
+message("permutation mode selected")
+message("condition column will be shuffled")
+
+df$condition <- sample(df$condition)
+
+}
+
 # write out
 
 print(df)
