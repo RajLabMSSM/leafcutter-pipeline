@@ -84,7 +84,8 @@ rule all:
 	#input: outFolder + dataCode + "_ds_support.tsv"
 	input: 
 		outFolder + "config.yaml",
-                expand(permFolder + dataCode + "_permutation_{permutation}_cluster_significance.txt", permutation = range(1,nPerm+1) )
+                permFolder + dataCode + "_all_permutation_results.tsv"
+		#expand(permFolder + dataCode + "_permutation_{permutation}_cluster_significance.txt", permutation = range(1,nPerm+1) )
 		#outFolder + dataCode + "_classifications.tsv",
                 #outFolder + dataCode + "_summary.tsv",
 		#outFolder + dataCode + "_cassette_inclusion.tsv",
@@ -131,3 +132,15 @@ rule leafcutterDS:
 		'	{input.clusters} '
 		'	{input.support} '
 
+rule combinePermutationResults:
+	input:
+ 		expand(permFolder + dataCode + "_permutation_{permutation}_cluster_significance.txt", permutation = range(1,nPerm+1) )
+	output: 
+		permFolder + dataCode + "_all_permutation_results.tsv"
+	params:
+		script = "scripts/combine_permutation_results.R"
+	shell:
+		"ml R/3.6.0;"
+		"Rscript {params.script} "
+		" --outFolder {permFolder} "
+		" --dataCode {dataCode} "
