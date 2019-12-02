@@ -4,16 +4,33 @@ library(leafcutter)
 library(dplyr)
 library(purrr)
 library(ggplot2)
+library(optparse)
 
-## implement QC from Balliu et al
+
 
 readClustersFile <- function(file){
-  clusters <- fread(file)
-  names(clusters)[1] <- "junctionID"
+  clusters <- read.table(file, header=TRUE, stringsAsFactors = FALSE, check.names = FALSE)
+  clusters <- tibble::rownames_to_column(clusters, var = "junctionID")
+  #clusters$junctionID <- row.names(clusters)
+  #names(clusters)[1] <- "junctionID"
   
   meta <- leafcutter::get_intron_meta(clusters$junctionID)
   meta$ID <- clusters$junctionID
   clusters$clusterID <- meta$clu
+  
+  clusters <- as.data.table(clusters)
+  
+  return(clusters)
+}
+
+
+writeClusterFile <- function(clusters, outFile){
+  message( paste("writing filtered clusters to", outFile))
+  to_write <- clusters
+  clusters$clusterID <- NULL
+  rownames(clusters) <- clusters$junctionID
+  clusters$junctionID <- NULL
+  write.table(clusters, file = gzfile(outFile), quote = FALSE,sep = " ",row.names = TRUE, col.names = TRUE,  )
 }
 
 
@@ -32,12 +49,13 @@ junctionStats <- function(clusters, label = "."){
   n_junc <- length(unique(clusters$junctionID))
   n_cluster <- length(unique(clusters$clusterID))
   
-  return(data.frame(label = label, junctions = n_junc, clusters = n_cluster))
+  return(data.frame(label = label, junctions = n_junc, clusters = n_cluster, stringsAsFactors = FALSE))
 }
 
 
 # calculate per junction missingness - how many samples have 0 supporting reads for this junction?
 calculateJunctionMissingness <- function(clusters){
+  message("Calculating junction missingness...")
   coverage <-  clusters[, -"clusterID"]
   
   missingness_df <- 
@@ -56,6 +74,7 @@ calculateJunctionMissingness <- function(clusters){
 
 # calculate mean contribution for each junction to its cluster
 calculateJunctionRatio <- function(clusters){
+  message("Calculating average junction ratio...")
   # sum junctions across all samples
   sums <- data.table(junctionID = clusters$junctionID, clusterID = clusters$clusterID , total = rowSums(clusters[, -c("junctionID", "clusterID")] ) )
   setkey(sums, "clusterID")
@@ -76,7 +95,7 @@ calculateJunctionRatio <- function(clusters){
 
 # calculate total size of cluster
 calculateClusterSize <- function(clusters){
-  
+  message("Calculating cluster sizes...")
   setkey(clusters, "clusterID")
   cluster_list <- split(clusters, by = "clusterID")
   
@@ -95,7 +114,7 @@ plotJunctionMissingness <- function( missingness_report){
     geom_histogram(binwidth = 0.1, colour = "white") +
     scale_x_continuous(labels=scales::percent) +
     theme_bw() +
-    #geom_vline(xintercept = 0.25, linetype = 1, colour = "red") +
+    geom_vline(xintercept = missingness, linetype = 3, colour = "black") +
     stat_bin(binwidth=0.1, geom="text", colour="black", size=3.5,
              aes(label=..count..),
              vjust=-1.5 ) +
@@ -108,84 +127,134 @@ plotJunctionRatio <- function(ratio_report){
     geom_histogram(binwidth = 0.1, colour = "white") +
     scale_x_continuous(labels=scales::percent) +
     theme_bw() +
-    #geom_vline(xintercept = 0.05, linetype = 1, colour = "red") +
+    geom_vline(xintercept = minratio, linetype = 3, colour = "black") +
     labs(title = "Junction contribution to total cluster reads") +
     stat_bin(binwidth=0.1, geom="text", colour="black", size=3.5,
              aes(label=..count..),
              vjust=-1.5 ) 
 }
 
-plotClusterSize <- function(cluster_size_report){
+plotClusterSize <- function(cluster_size_report, label){
+  # hard limit at `15 junctions
+  cluster_size_report$n[ cluster_size_report$n >= 15] <- 15
+  
   cluster_size_report %>%
     ggplot(aes( x = n)) +
-    geom_histogram(binwidth = 5) +
+    geom_histogram(binwidth = 1) +
     #scale_x_continuous(labels=scales::percent) +
     theme_bw() +
-    #geom_vline(xintercept = 10, linetype = 3) +
-    labs(title = "Cluster size") +
+    geom_vline(xintercept = 1 + 0.5, linetype = 3) +
+    geom_vline(xintercept = maxsize + 0.5, linetype = 3) +
+    labs(title = "Cluster size", subtitle = label) +
     #geom_text(stat='count', aes(label=..count..), position = position_stack(vjust = 1),size=4)
     #geom_histogram(aes(fill=cut), binwidth=1500, colour="grey20", lwd=0.2) +
-    stat_bin(binwidth=5, geom="text", colour="black", size=3.5,
+    stat_bin(binwidth=1, geom="text", colour="black", size=3.5,
              aes(label=..count..),
-             vjust=-1.1 )
-  
+             vjust=-1.1 ) 
 }
 
-test_file <- "data/FTD_FCX_mod2_perind_numers.counts.gz"
 
-clusters <- readClustersFile(test_file)
 
-# calculate metrics
+## implement QC from Balliu et al
+option_list <- list(
+  make_option(c('--dataCode'), help='', default = "example"),
+  make_option(c('--outFolder'), help='', default = "results/example/"),
+  make_option(c('--missingness'), help = 'proportion of total sample size that are missing a junction for filtering: 0-1', default = 0.25),
+  make_option(c('--minratio'), help = "the minimum contribution for a junction to its cluster: 0-1", default = 0.05),
+  make_option(c('--maxsize'), help = "the maximum number of junctions allowed in a cluster", default = 10)
+)
+
+option.parser <- OptionParser(option_list=option_list)
+opt <- parse_args(option.parser)
+
+
+dataCode <- opt$dataCode
+outFolder <- opt$outFolder
+missingness <- opt$missingness
+minratio <- opt$minratio
+maxsize <- opt$maxsize
+
+inFile <- paste0(outFolder, dataCode, "_perind_numers.counts.gz")
+
+stopifnot(file.exists(inFile))
+
+clusters <- readClustersFile(inFile)
+
+## calculate metrics
+
 junction_missingness_baseline <- calculateJunctionMissingness(clusters)
 junction_ratio_baseline <- calculateJunctionRatio(clusters)
 cluster_size_baseline <- calculateClusterSize(clusters)
 
 
-# plots and tables
-
-table(junction_missingness_baseline$missingness >= 0.25)
-table(junction_ratio_baseline$ratio < 0.05)
-
 ## apply junction filters
-
-high_missingness <- junction_missingness_baseline$junctionID[ junction_missingness_baseline$missingness >= 0.25]
-low_ratio <- junction_ratio_baseline$junctionID[ junction_ratio_baseline$ratio < 0.05]
+high_missingness <- junction_missingness_baseline$junctionID[ junction_missingness_baseline$missingness >= missingness]
+low_ratio <- junction_ratio_baseline$junctionID[ junction_ratio_baseline$ratio < minratio]
 
 junctions_to_remove <- clusters$junctionID[ clusters$junctionID %in% high_missingness | clusters$junctionID %in% low_ratio ]
 
-junctions_post_qc <- clusters[ ! clusters$junctionID %in% junctions_to_remove]
+message( paste("Removing ", length(junctions_to_remove), "junctions that fail QC") )
+
+if(length(junctions_to_remove) == 0){
+  junctions_post_qc <- clusters
+}else{
+  junctions_post_qc <- clusters[ ! clusters$junctionID %in% junctions_to_remove]
+}
+
+
+if(nrow(junctions_post_qc) == 0){
+  stop("No junctions remain after junction QC filtering. consider relaxing your thresholds")
+}
+
 
 # Cluster QC: exclude clusters with only a single remaining junction or greater than 10 junctions
 
 cluster_size_post_qc <- calculateClusterSize(junctions_post_qc)
 
-table(cluster_size_cleaned$n > 1 & cluster_size_cleaned$n < 10)
+#table(cluster_size_post_qc$n > 1 & cluster_size_post_qc$n < maxsize)
 
-clusters_to_keep <- cluster_size_cleaned$clusterID[cluster_size_cleaned$n > 1 & cluster_size_cleaned$n <= 10]
+clusters_to_keep <- cluster_size_post_qc$clusterID[cluster_size_post_qc$n > 1 & cluster_size_post_qc$n <= maxsize]
 
-setkey(junctions_clean, "clusterID")
+setkey(junctions_post_qc, "clusterID")
 
-clusters_clean <- junctions_clean[ clusters_to_keep ]
+message( paste("Removing ", nrow(cluster_size_post_qc) - length(clusters_to_keep), "clusters that fail size QC") )
+
+clusters_filtered <- junctions_post_qc[ clusters_to_keep ]
+
+message("Creating QC plots...")
 
 ## plots
-
+plotFile <- paste0(outFolder, dataCode, "_junction_qc_plots.pdf")
+pdf(plotFile, onefile = TRUE)
 plotJunctionMissingness(junction_missingness_baseline)
 
 plotJunctionRatio(junction_ratio_baseline)
 
-plotClusterSize(cluster_size_baseline)
+plotClusterSize(cluster_size_baseline, label = "pre junction QC")
 
-plotClusterSize(cluster_size_post_qc)
-
+plotClusterSize(cluster_size_post_qc, label = "post junction QC")
+dev.off()
 
 # output counts of junctions and clusters
-junctionStats(clusters, label = "pre-QC")
+qc_stats <- list(
+  junctionStats(clusters, label = "pre_QC"),
+  junctionStats(junctions_post_qc, label = "post_junction_QC"),
+  junctionStats(clusters_filtered, label = "post_cluster_QC")
+) %>%
+  bind_rows()
 
-junctionStats(junctions_clean, label = "post-junction QC")
-
-junctionStats(clusters_clean, label = "post-cluster QC")
 
 
+
+statsFile <- paste0(outFolder, dataCode, "_qc_statistics.txt")
+
+write.table(qc_stats, statsFile, quote = FALSE, row.names = FALSE, sep = "\t")
+
+outFile <- paste0(outFolder, dataCode, "_filtered_perind_numers.counts.gz")
+
+writeClusterFile(clusters_filtered, outFile)
+
+print(qc_stats)
 
 
 
