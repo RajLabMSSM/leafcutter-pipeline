@@ -65,7 +65,7 @@ calculateJunctionMissingness <- function(clusters){
 
       data.frame(
           junctionID = junctionID, 
-           missingness = (1 - ( sum(df > 0) / length(df) ) ),
+           missingness = ( sum(df == 0) / length(df)  ),
            stringsAsFactors = FALSE
            )
   }) %>% bind_rows()
