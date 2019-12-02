@@ -50,6 +50,12 @@ leafcutterOpt = config['leafcutter']
 minCluRatio = leafcutterOpt["minCluRatio"]
 minCluReads = leafcutterOpt["minCluReads"]
 intronMax = leafcutterOpt["intronMax"]
+
+# QC options
+missingness = leafcutterOpt["missingness"]
+maxsize = leafcutterOpt["maxsize"]
+minratio = leafcutterOpt["minratio"]
+
 # ds options
 samplesPerIntron = leafcutterOpt["samplesPerIntron"]
 samplesPerGroup = leafcutterOpt["samplesPerGroup"]
@@ -189,6 +195,28 @@ rule clusterJunctions:
 		# remove temporary files
 		'for i in $(cat {input.tempFileList}); do rm $i; done'
 
+## Perform junction and cluster level filtering before differential splicing analysis
+## This is largely inspired by Balliu et al 2019
+# maxsize - how many junctions can be in a cluster -default = 10
+# missingness - what proportion of the samples can a junction be missing from? default = 0.1
+# minratio - the minimum mean ratio a junction should contribute to a cluster. default = 0.05
+rule junctionQC:
+	input:
+		clusters = outFolder + dataCode + "_perind_numers.counts.gz"
+	output:
+		outFolder + dataCode + "_filtered_perind_numers.counts.gz"
+	params:
+		script = "scripts/cluster_QC.R"
+	shell:
+		"ml R/3.6.0; "
+		"Rscript {params.script} "
+		"--outFolder {outFolder} "
+		"--dataCode {dataCode} "
+		"--missingness {missingness} "
+		"--minratio {minratio} "
+		"--maxsize {maxsize} "
+
+
 # prepare support table the way leafcutter likes it
 # be wary of sample names - sometimes the juncSuffix will be appended
 rule prepareMeta:
@@ -211,7 +239,7 @@ rule prepareMeta:
 rule leafcutterDS:
 	input:
 		support = outFolder + dataCode + "_ds_support.tsv",
-		clusters = outFolder + dataCode + "_perind_numers.counts.gz"
+		clusters = outFolder + dataCode + "_filtered_perind_numers.counts.gz"
 	output:
 		sigClusters = outFolder + dataCode + "_cluster_significance.txt",
 		effectSizes = outFolder + dataCode + "_effect_sizes.txt"
@@ -288,7 +316,7 @@ rule classifyClusters:
 rule quantifyPSI:
 	input:	
 		support = outFolder + dataCode + "_ds_support.tsv",
-		counts = outFolder + dataCode + "_perind_numers.counts.gz"
+		counts = outFolder + dataCode + "_filtered_perind_numers.counts.gz"
 	output:
 		outFolder + dataCode + "_residual.counts.gz",
 	params:
