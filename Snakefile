@@ -266,7 +266,7 @@ rule createRefs:
 
 rule prepareShiny:
 	input:
-		clusterCounts = outFolder + dataCode + "_perind_numers.counts.gz",
+		clusterCounts = outFolder + dataCode + "_filtered_perind_numers.counts.gz",
 		sigClusters = outFolder + dataCode + "_cluster_significance.txt",
 		effectSizes = outFolder + dataCode + "_effect_sizes.txt",
 		support = outFolder + dataCode + "_ds_support.tsv",

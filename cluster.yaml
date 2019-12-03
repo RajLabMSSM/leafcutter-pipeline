@@ -11,18 +11,26 @@ __default__:
 #   time: '120:00'
 #   cores: 1
 #   mem: 3750
-# clusterJunctions:
-#   time: '90:00'
-#   mem: 3750
-#   cores: 1
+clusterJunctions:
+   time: '180'
+   mem: 5750
+   cores: 16
 leafcutterDS:
-   time: '120:00'
+   time: '120'
+   mem: 1750
+   cores: 16
+junctionQC:
+   time: '180'
    mem: 3750
    cores: 4
+quantifyPSI:
+   time: '60'
+   mem: 3750
+   cores: 16
 # createRefs:
 #   time: '24:00'
-# prepareShiny:
-#   mem: 3750
+prepareShiny:
+   mem: 15750
 #   cores: 1
 #   time: '24:00'
 ## copied from Shea - this shows how to set rule-specific cluster parameters
