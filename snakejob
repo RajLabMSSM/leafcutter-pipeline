@@ -42,7 +42,7 @@ done
 echo config used is $config
 echo snakefile used is $snakefile
 
-if [ -z $dryrun ];then
+if [ ! -z "$dryrun" ];then
 	echo "dry run mode"
 fi
 
