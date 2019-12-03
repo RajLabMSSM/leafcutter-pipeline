@@ -41,7 +41,6 @@ leafcutter:
         minCluRatio: 0.01
         minCluReads: 50
         intronMax: 100000
-        n_threads: 4
         # QC options
         missingness: 0.5
         maxsize: 10
