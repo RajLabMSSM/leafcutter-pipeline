@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # -m {cluster.partition}"
 
+# max concurrent jobs
+njobs=100
 set -e
 
 if [ ! -d "cluster" ]; then
@@ -68,7 +70,7 @@ bsub=("bsub -K -J $jname:{rule}:{wildcards}"
 
 snakemake -u cluster.yaml --cluster-sync "${bsub[*]}" \
   --local-cores 4 --max-jobs-per-second 5 \
-  --jobs 100 \
+  --jobs $njobs \
   -s $snakefile --configfile $config \
   $dryrun
 

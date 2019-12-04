@@ -1,6 +1,6 @@
 __default__:
   #partition: chimera
-  queue: premium
+  queue: testbode
   cores: 1
   mem: 3750
   time: '60'
@@ -16,9 +16,9 @@ clusterJunctions:
    mem: 5750
    cores: 16
 leafcutterDS:
-   time: '120'
+   time: '180'
    mem: 1750
-   cores: 16
+   cores: 8
 junctionQC:
    time: '180'
    mem: 3750

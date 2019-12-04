@@ -1,5 +1,8 @@
 # permcutter - permutation testing for leafcutter
 
+# number of permutations  of the condition column to perform differential splicing on
+nPerm = 1000
+
 # snakefile for leafcutter pipeline
 # dependencies:
 # samtools
@@ -76,7 +79,6 @@ else:
 
 localrules: copyConfig, writeJunctionList
 
-nPerm=100
 
 rule all:
 	#input: outFolder + "junctionList.txt"
@@ -115,7 +117,7 @@ rule permuteMeta:
 rule leafcutterDS:
 	input:
 		support = permFolder + dataCode + "_permutation_{permutation}_ds_support.tsv",
-		clusters = outFolder + dataCode + "_perind_numers.counts.gz"
+		clusters = outFolder + dataCode + "_filtered_perind_numers.counts.gz"
 	output:
 		sigClusters = permFolder + dataCode + "_permutation_{permutation}_cluster_significance.txt",
 		effectSizes = permFolder + dataCode + "_permutation_{permutation}_effect_sizes.txt"

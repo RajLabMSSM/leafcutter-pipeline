@@ -31,7 +31,7 @@ res_files <- list.files(outFolder, pattern = "*significance.txt", full.names = T
 results <- 
   map_df(1:length(res_files), ~{
 	df <- read_tsv(res_files[.x], col_types = "cdddcd")
-	n.sig = sum(df$p.adjust < 0.05)
+	n.sig = sum(df$p.adjust < 0.05, na.rm = TRUE)
 	data.frame( i  = .x, n.sig = n.sig)	
 })
 
