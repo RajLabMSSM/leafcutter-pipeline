@@ -246,6 +246,7 @@ rule leafcutterDS:
 	params:
 		n_threads = leafcutterOpt['n_threads']
 	shell:	
+		'ml R/3.6.0; ' 
 		'Rscript {leafcutterPath}/scripts/leafcutter_ds.R '
 		'	--output_prefix {outFolder}{dataCode} '
 		'	--num_threads {params.n_threads} '
