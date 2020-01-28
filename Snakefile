@@ -127,6 +127,7 @@ rule extractJunctions:
 
 
 # remove weird contigs that cause add_chr() to break by adding "chr" to normal chr names
+# now deprecated
 rule stripContigs:
 	input:
 		'junctions/' + '{samples}' + juncSuffix
@@ -154,12 +155,12 @@ rule copyConfig:
 # bash has limit on length of shell command - 1000 samples in an array doesn't work.
 rule writeJunctionList:
 	input:
-		juncFiles = expand('junctions/{samples}{junc}.nocontigs', samples = samples, junc = juncSuffix)
+		juncFiles = expand('junctions/{samples}{junc}', samples = samples, junc = juncSuffix)
 	output:
 		junctionList = outFolder + "junctionList.txt",
 		tempFileList = outFolder + "tempFileList.txt"
 	params:
-		tempFiles = expand('{samples}{junc}.nocontigs.{dataCode}.sorted.gz', samples = samples, junc = juncSuffix, dataCode = dataCode )
+		tempFiles = expand('{samples}{junc}.{dataCode}.sorted.gz', samples = samples, junc = juncSuffix, dataCode = dataCode )
 	run:
 		# write juncFiles to junctionList, tempFiles to tempFiles list
 		with open(output.junctionList, 'w') as f:
@@ -191,6 +192,7 @@ rule clusterJunctions:
 		'{params.script} '
 		'-j {input.junctionList} --minclureads {minCluReads} '
 		' {params.strand} '
+		' --checkchrom '
 		'--mincluratio {minCluRatio}  -o {outFolder}{dataCode} -l {intronMax};'
 		# remove temporary files
 		'for i in $(cat {input.tempFileList}); do rm $i; done'
