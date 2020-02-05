@@ -340,6 +340,9 @@ junctions_split <- junctions_removed
 junctions_split$junctionID <- paste( meta_with_split$chr, meta_with_split$start, meta_with_split$end, meta_with_split$clu, sep = ":")
 junctions_split$clusterID <- meta_with_split$clu
 
+# remove  freak duplicates - not sure how these occur but very rare
+junctions_split <- junctions_split[!duplicated(junctions_split$junctionID), ]
+
 # final check of connectivity
 meta <- leafcutter::get_intron_meta(junctions_split$junctionID)
 meta$start <- as.character(meta$start)
@@ -349,9 +352,13 @@ meta_by_cluster <- split(meta, meta$clu)
 cluster_graphs <- map(meta_by_cluster, makeClusterGraph)
 connectivity_res_3 <- map_chr(cluster_graphs, testConnectivity )
 
-if( !all(unlist(connectivity_res_3) == "keep") ){
-  stop("I still find unconnected clusters following graph QC")
-}
+# any that are still disconnected then throw them out
+final_remove <- names(connectivity_res_3)[connectivity_res_3 != "keep" ]
+
+#if( !all(unlist(connectivity_res_3) == "keep") ){
+#  save.image("debug.Rdata")
+#  stop("I still find unconnected clusters following graph QC")
+#}
 
 
 
