@@ -11,8 +11,12 @@ metadata: 'example/samples.tsv'
 outFolder: 'results/'
 
 # differential splicing - set reference and alternate conditions
-refCondition: 'control'
-altCondition: 'tdp_kd'
+refCondition: 
+    - 'condition1'
+altCondition: 
+    - 'condition2'
+    - 'condition3'
+contrastSep: "_"
 
 inFolder: 'example/data/'
 

@@ -30,7 +30,7 @@ contrastSep <- opt$contrastSep
 outFolder <- opt$outFolder
 
 
-outFile <- paste0(outFolder, dataCode)
+outFile <- paste0(outFolder, contrast, "/", dataCode, "_", contrast)
 
 load(app)
 
@@ -74,8 +74,8 @@ deltaPSI <- function(cluster, control_samples, case_samples){
 }
 
 # get ref and alt condition from contrast string
-refCondition <- str_split_fixed(contrast, contrast_sep, 2)[,1]
-altCondition <- str_split_fixed(contrast, contrast_sep, 2)[,2]
+refCondition <- str_split_fixed(contrast, contrastSep, 2)[,1]
+altCondition <- str_split_fixed(contrast, contrastSep, 2)[,2]
 
 # get sample IDs - assumes only two groups
 control_samples <- meta$sample[meta$group == refCondition]

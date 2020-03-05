@@ -5,12 +5,14 @@
 # python - pandas
 # R - leafcutter
 # R - a bunch of packages
-
+from yaml import dump
 import itertools
 import pandas as pd
 import os
 import socket
+from shutil import copy
 # get variables out of config.yaml
+
 
 leafcutterPath = config['leafcutterPath']
 python2Path = config['python2Path']
@@ -76,6 +78,8 @@ leafcutterOpt = config['leafcutter']
 minCluRatio = leafcutterOpt["minCluRatio"]
 minCluReads = leafcutterOpt["minCluReads"]
 intronMax = leafcutterOpt["intronMax"]
+# FDR threshold of shiny app
+FDR_limit = config["FDR_limit"]
 
 # QC options
 missingness = leafcutterOpt["missingness"]
@@ -162,13 +166,14 @@ rule stripContigs:
 # copy the config and samples files in to the outFolder for posterity
 rule copyConfig:
     input:
-        metadataFile
+        metadata = metadataFile
     output: 
         config_out = outFolder + "config.yaml",
         metadata = outFolder + "samples.tsv"
     run:
-        yaml.dump(config, output.config_out, default_flow_style = False)
-        shutil.copy(input.metadata, output.metadata) 
+        stream = open(output.config_out, 'w')
+        dump(config, stream, default_flow_style = False)
+        copy(input.metadata, output.metadata) 
 
 # write junction list to file in python rather than bash
 # bash has limit on length of shell command - 1000 samples in an array doesn't work.
@@ -269,7 +274,7 @@ rule leafcutterDS:
     shell:  
         'ml R/3.6.0; ' 
         'Rscript {leafcutterPath}/scripts/leafcutter_ds.R '
-        '   --output_prefix {outFolder}{dataCode}_{wildcards.contrast} '
+        '   --output_prefix {outFolder}{wildcards.contrast}/{dataCode}_{wildcards.contrast} '
         '   --num_threads {params.n_threads} '
         '   --min_samples_per_intron {samplesPerIntron} '
         '   --min_samples_per_group {samplesPerGroup} '
@@ -328,7 +333,8 @@ rule prepareShiny:
         "{refFolder}{refCode} "
         "-o {output.shinyData} "
         "-m {input.support} "
-        "-c {dataCode}_{wildcards.contrast}" 
+        "-c {dataCode}_{wildcards.contrast} " 
+        "--FDR {FDR_limit} "
 
 # calculate delta PSI for each significant cluster
 rule deltaPSI:
@@ -359,7 +365,7 @@ rule classifyClusters:
         script = "scripts/classify_clusters.R"
     shell:
         "Rscript {params.script} "
-        " -o {outFolder}{dataCode}_{wildcards.contrast} "
+        " -o {outFolder}{wildcards.contrast}/{dataCode}_{wildcards.contrast} "
                 " {input.app} "
 
 rule quantifyPSI:

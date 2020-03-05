@@ -7,6 +7,7 @@ library(ggplot2)
 library(optparse)
 library(igraph)
 
+options(echo = TRUE)
 
 readClustersFile <- function(file){
   clusters <- read.table(file, header=TRUE, stringsAsFactors = FALSE, check.names = FALSE)
@@ -276,27 +277,32 @@ connectivity_res_1 <- map(cluster_graphs, testConnectivity )
 # when results == "modify" then prune the disconnected junctions from the cluster
 to_prune <- cluster_graphs[ connectivity_res_1 == "modify" ] 
 
+if(length(to_prune) == 0){
+    junctions_removed <- junctions_post_qc
+    junctions_pruned <- junctions_post_qc
+}else{
+    prune_df <- map_df(to_prune, junctions_to_prune )
+    names(prune_df) <- c("start", "end")
+    #prune_df$start <- as.numeric(prune_df$start)
+    #prune_df$end <- as.numeric(prune_df$end)
 
-prune_df <- map_df(to_prune, junctions_to_prune )
-names(prune_df) <- c("start", "end")
-#prune_df$start <- as.numeric(prune_df$start)
-#prune_df$end <- as.numeric(prune_df$end)
+    # match junctions in meta to prune list
+    meta$to_prune <- ifelse( meta$start %in% prune_df$start & meta$end %in% prune_df$end, TRUE, FALSE)
 
-# match junctions in meta to prune list
-meta$to_prune <- ifelse( meta$start %in% prune_df$start & meta$end %in% prune_df$end, TRUE, FALSE)
+    # remove these junctions from junction_post_qc
+    junctions_pruned <- junctions_post_qc[ meta$to_prune == FALSE,] 
 
-# remove these junctions from junction_post_qc
-junctions_pruned <- junctions_post_qc[ meta$to_prune == FALSE,] 
+    # recreate metadata
+    meta_pruned <- leafcutter::get_intron_meta(junctions_pruned$junctionID)
 
-# recreate metadata
-meta_pruned <- leafcutter::get_intron_meta(junctions_pruned$junctionID)
+    # when connectivity_res_1 == remove, remove entire cluster
+    clusters_to_remove <- names(connectivity_res_1)[connectivity_res_1 == "remove" ]
 
-# when connectivity_res_1 == remove, remove entire cluster
-clusters_to_remove <- names(connectivity_res_1)[connectivity_res_1 == "remove" ]
+    meta_pruned$to_remove <- meta_pruned$clu %in% clusters_to_remove
 
-meta_pruned$to_remove <- meta_pruned$clu %in% clusters_to_remove
+    junctions_removed <- junctions_pruned[ meta_pruned$to_remove == FALSE,] 
+}
 
-junctions_removed <- junctions_pruned[ meta_pruned$to_remove == FALSE,] 
 
 # recheck connectivity
 meta <- leafcutter::get_intron_meta(junctions_removed$junctionID)
@@ -326,40 +332,45 @@ splitClusters <- function(graph, clusterID){
 # get the graphs that require modification
 clusters_to_split <- cluster_graphs[names(connectivity_res_2)[connectivity_res_2 == "modify" ] ]
 
-# split these clusters only
-split_clusters <- map2_df(clusters_to_split, names(clusters_to_split), splitClusters)
+# if no splitting required then skip
+if( length(clusters_to_split) == 0 ){
+    junctions_split <- junctions_removed
+}else{
 
-# add new split cluster ids to meta
-# sneaky way - left join the split_clusters to the metadata
-# this will create clu.x and clu.y 
-# now coalesce the two values with clu.y going first - therefore if clu.y is a new cluster label that will be the label picked
-meta_with_split <- left_join(meta, split_clusters, by = c("start", "end")) %>%
-  mutate(clu = coalesce(clu.y, clu.x))
+    # split these clusters only
+    split_clusters <- map2_df(clusters_to_split, names(clusters_to_split), splitClusters)
 
-junctions_split <- junctions_removed
-junctions_split$junctionID <- paste( meta_with_split$chr, meta_with_split$start, meta_with_split$end, meta_with_split$clu, sep = ":")
-junctions_split$clusterID <- meta_with_split$clu
+    # add new split cluster ids to meta
+    # sneaky way - left join the split_clusters to the metadata
+    # this will create clu.x and clu.y 
+    # now coalesce the two values with clu.y going first - therefore if clu.y is a new cluster label that will be the label picked
+    meta_with_split <- left_join(meta, split_clusters, by = c("start", "end")) %>%
+    mutate(clu = coalesce(clu.y, clu.x))
 
-# remove  freak duplicates - not sure how these occur but very rare
-junctions_split <- junctions_split[!duplicated(junctions_split$junctionID), ]
+    junctions_split <- junctions_removed
+    junctions_split$junctionID <- paste( meta_with_split$chr, meta_with_split$start, meta_with_split$end, meta_with_split$clu, sep = ":")
+    junctions_split$clusterID <- meta_with_split$clu
 
-# final check of connectivity
-meta <- leafcutter::get_intron_meta(junctions_split$junctionID)
-meta$start <- as.character(meta$start)
-meta$end <- as.character(meta$end)
-meta_by_cluster <- split(meta, meta$clu)
+    # remove  freak duplicates - not sure how these occur but very rare
+    junctions_split <- junctions_split[!duplicated(junctions_split$junctionID), ]
 
-cluster_graphs <- map(meta_by_cluster, makeClusterGraph)
-connectivity_res_3 <- map_chr(cluster_graphs, testConnectivity )
+    # final check of connectivity
+    meta <- leafcutter::get_intron_meta(junctions_split$junctionID)
+    meta$start <- as.character(meta$start)
+    meta$end <- as.character(meta$end)
+    meta_by_cluster <- split(meta, meta$clu)
 
-# any that are still disconnected then throw them out
-final_remove <- names(connectivity_res_3)[connectivity_res_3 != "keep" ]
+    cluster_graphs <- map(meta_by_cluster, makeClusterGraph)
+    connectivity_res_3 <- map_chr(cluster_graphs, testConnectivity )
 
-#if( !all(unlist(connectivity_res_3) == "keep") ){
-#  save.image("debug.Rdata")
-#  stop("I still find unconnected clusters following graph QC")
-#}
+    # any that are still disconnected then throw them out
+    final_remove <- names(connectivity_res_3)[connectivity_res_3 != "keep" ]
 
+    #if( !all(unlist(connectivity_res_3) == "keep") ){
+    #  save.image("debug.Rdata")
+    #  stop("I still find unconnected clusters following graph QC")
+    #}
+}
 
 
 # Cluster QC: 

@@ -1,8 +1,7 @@
 sample	condition	type
-TDP43_knockdown_1_unique_kcnq2	tdp_kd	A
-TDP43_knockdown_2_unique_kcnq2	tdp_kd	B
-TDP43_knockdown_3_unique_kcnq2	tdp_kd	B
-control_scramble_1_unique_kcnq2	control	A
-control_scramble_2_unique_kcnq2	control	B
-control_scramble_3_unique_kcnq2	control	B
-
+TDP43_knockdown_1_unique_kcnq2	condition2	A
+TDP43_knockdown_2_unique_kcnq2	condition2	B
+TDP43_knockdown_3_unique_kcnq2	condition1	B
+control_scramble_1_unique_kcnq2	condition1	A
+control_scramble_2_unique_kcnq2	condition3	B
+control_scramble_3_unique_kcnq2	condition3	B

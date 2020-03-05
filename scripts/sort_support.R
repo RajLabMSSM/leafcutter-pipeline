@@ -6,7 +6,7 @@
 # outFile
 
 library(optparse)
-
+library(stringr)
 option_list <- list(
     make_option(c('--metadata'), help='', default = "samples.tsv"),
     make_option(c('--dataCode'), help='', default = "example"),
@@ -35,7 +35,7 @@ juncSuffix <- opt$juncSuffix
 junctionMode <- opt$junctionMode
 permutation <- opt$permutation
 
-outFile <- paste0(outFolder, "/", dataCode, "_ds_support.tsv")
+outFile <- paste0(outFolder, "/", contrast, "/", dataCode, "_", contrast, "_ds_support.tsv")
 
 message("Creating leafcutter support file from provided metadata")
 message("-------------------------------------------------------")
