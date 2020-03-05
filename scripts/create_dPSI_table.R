@@ -9,6 +9,8 @@ library(optparse)
 option_list <- list(
     make_option(c('--app'), help='', default = "shiny.RData"),
     make_option(c('--dataCode'), help='', default = "example"),
+   make_option(c('--contrast'), help='A contrast string, denoting two conditions separated by contrast_sep', default = "control_case"),
+    make_option(c('--contrastSep'), help = "how the two conditions in the contrast string are separated", default = "_" ), 
     make_option(c('--refCondition'), help='', default = "control"),
     make_option(c('--altCondition'), help='', default="case"),
         make_option(c('--outFolder'), help='', default = "leafcutter/")
@@ -21,8 +23,10 @@ opt <- parse_args(option.parser)
 
 app <- opt$app
 dataCode <- opt$dataCode
-refCondition <- opt$refCondition
-altCondition <- opt$altCondition
+contrast <- opt$contrast
+contrastSep <- opt$contrastSep
+#refCondition <- opt$refCondition
+#altCondition <- opt$altCondition
 outFolder <- opt$outFolder
 
 
@@ -68,6 +72,10 @@ deltaPSI <- function(cluster, control_samples, case_samples){
   
   return(dPSI_table)
 }
+
+# get ref and alt condition from contrast string
+refCondition <- str_split_fixed(contrast, contrast_sep, 2)[,1]
+altCondition <- str_split_fixed(contrast, contrast_sep, 2)[,2]
 
 # get sample IDs - assumes only two groups
 control_samples <- meta$sample[meta$group == refCondition]

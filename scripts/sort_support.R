@@ -12,7 +12,9 @@ option_list <- list(
     make_option(c('--dataCode'), help='', default = "example"),
     make_option(c('--refCondition'), help='', default = "control"),
     make_option(c('--altCondition'), help='', default="case"),
-	make_option(c('--outFolder'), help='', default = "leafcutter/"),
+	make_option(c('--contrast'), help='A contrast string, denoting two conditions separated by contrast_sep', default = "control_case"),
+    make_option(c('--contrastSep'), help = "how the two conditions in the contrast string are separated", default = "_" ),
+    make_option(c('--outFolder'), help='', default = "leafcutter/"),
 	make_option(c('--junctionMode'), help = 'whether junctions are from regtools or from RAPiD', default = "RAPiD"),
 	make_option(c('--juncSuffix'), help='suffix after sample name to name junctions', default = ''),
 	make_option(c('--permutation'), action = "store_true", help = "whether to permute condition column", default = FALSE)
@@ -24,6 +26,8 @@ opt <- parse_args(option.parser)
 
 metadata <- opt$metadata
 dataCode <- opt$dataCode
+contrast <- opt$contrast
+contrast_sep <- opt$contrastSep
 refCondition <- opt$refCondition
 altCondition <- opt$altCondition
 outFolder <- opt$outFolder
@@ -52,6 +56,10 @@ if( names(df)[2] != "condition" ){
 }
 
 # remove any samples that have a condition not in ref or alt
+refCondition <- str_split_fixed(contrast, contrast_sep, 2)[,1]
+altCondition <- str_split_fixed(contrast, contrast_sep, 2)[,2]
+
+
 
 if( ! all( c(refCondition, altCondition) %in% df$condition) ){
 	stop("neither condition is in metadata")

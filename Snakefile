@@ -6,7 +6,7 @@
 # R - leafcutter
 # R - a bunch of packages
 
-
+import itertools
 import pandas as pd
 import os
 import socket
@@ -17,7 +17,9 @@ python2Path = config['python2Path']
 python3Path = config['python3Path']
 dataCode = config['dataCode']
 
-print(dataCode)
+print(" * Leafcutter Pipeline *")
+print(" author: Jack Humphrey ")
+print(" Dataset: %s " % dataCode)
 
 inFolder = config['inFolder']
 # create outFolder path using dataCode
@@ -29,15 +31,39 @@ if stranded != 0:
 else:
     strandParam = ""
 
-print(outFolder)
+print( "output folder: ", outFolder)
 
-metadata = config['metadata']
+metadataFile = config['metadata']
 bamSuffix = config['bamSuffix']
 # default is '.junc'; for samples processed with RAPiD use filtered junctions : '.Aligned.Quality.Sorted.bam.junc' 
 juncSuffix = config['juncSuffix']
 
+# get sample information of support file
+# using pandas
+metadata = pd.read_csv(metadataFile, sep = '\t')
+samples = metadata['sample']
+
 refCondition = config['refCondition']
 altCondition = config['altCondition']
+contrastSep = config['contrastSep']
+
+# test whether all conditions are present in metadata
+conditions = list(metadata['condition'])
+overlaps = [i in conditions for i in refCondition + altCondition ]
+if not all(overlaps):
+    print(" * ERROR: some conditions in config.yaml are missing from the metadata ") 
+    print(metadata)
+    print("Expected conditions: ", conditions)
+    exit()
+
+# create all combinations of ref and alt.
+# will be stored as two lists
+# get product of two lists:
+all_contrasts = list(itertools.product(refCondition,altCondition))
+all_contrasts = [contrastSep.join(i) for i in all_contrasts]
+
+print(" * %s contrasts detected: " % len(all_contrasts) )
+print(" * %s " % all_contrasts ) 
 
 # annotation 
 refFolder = config['refFolder']
@@ -61,9 +87,6 @@ samplesPerIntron = leafcutterOpt["samplesPerIntron"]
 samplesPerGroup = leafcutterOpt["samplesPerGroup"]
 minCoverage = leafcutterOpt["minCoverage"]
 
-# get sample information of support file
-# using pandas
-samples = pd.read_csv(metadata, sep = '\t')['sample']
 
 # Chimera specific options
 isChimera = "hpc.mssm.edu" in socket.getfqdn()
@@ -96,14 +119,11 @@ rule all:
     #input: outFolder + dataCode + "_perind_numers.counts.gz"
     #input: outFolder + dataCode + "_ds_support.tsv"
     input:
-        refFolder + refCode + "/5UTR.bed",  
-        outFolder + dataCode + "_shiny.RData",
+        refFolder + refCode + "/5UTRs.bed",  
+        expand(outFolder + "{contrast}/" + dataCode + "_{contrast}_shiny.RData", contrast = all_contrasts),
         outFolder + "config.yaml",
-        outFolder + dataCode + "_deltapsi_best.tsv",
-                outFolder + dataCode + "_classifications.tsv",
-                outFolder + dataCode + "_summary.tsv",
-        outFolder + dataCode + "_cassette_inclusion.tsv",
-        outFolder + dataCode + "_residual.counts.gz"
+        expand(outFolder + "{contrast}/" + dataCode + "_{contrast}_cassette_inclusion.tsv", contrast = all_contrasts),
+        expand(outFolder + "{contrast}/" + dataCode + "_{contrast}_residual.counts.gz", contrast = all_contrasts)
 # index bams if needed
 rule indexBams:
     input:
@@ -141,16 +161,14 @@ rule stripContigs:
 
 # copy the config and samples files in to the outFolder for posterity
 rule copyConfig:
-    input: 
-        config = workflow.overwrite_configfile,
-        metadata = metadata
-
+    input:
+        metadataFile
     output: 
-        config = outFolder + "config.yaml",
+        config_out = outFolder + "config.yaml",
         metadata = outFolder + "samples.tsv"
-    shell:
-        "cp {input.config} {output.config};"
-        "cp {input.metadata} {output.metadata}"
+    run:
+        yaml.dump(config, output.config_out, default_flow_style = False)
+        shutil.copy(input.metadata, output.metadata) 
 
 # write junction list to file in python rather than bash
 # bash has limit on length of shell command - 1000 samples in an array doesn't work.
@@ -223,15 +241,15 @@ rule junctionQC:
 # prepare support table the way leafcutter likes it
 # be wary of sample names - sometimes the juncSuffix will be appended
 rule prepareMeta:
-    input: metadata
-    output: support = outFolder + dataCode + "_ds_support.tsv"
+    input: metadataFile
+    output: support = outFolder + "{contrast}/" + dataCode + "_{contrast}_ds_support.tsv"
     params: js = juncSuffix
     shell:
         "Rscript scripts/sort_support.R "
-        "   --metadata {metadata} "
+        "   --metadata {input} "
         "   --dataCode {dataCode} "
-        "   --refCondition {refCondition} "
-        "   --altCondition {altCondition} "
+        "   --contrast {wildcards.contrast} "
+        "   --contrastSep {contrastSep} "
         "   --outFolder {outFolder} "
         "   --junctionMode {junctionMode} "
         "       --juncSuffix \"{params.js}\" "
@@ -241,17 +259,17 @@ rule prepareMeta:
 # run differential splicing
 rule leafcutterDS:
     input:
-        support = outFolder + dataCode + "_ds_support.tsv",
+        support = outFolder + "{contrast}/" + dataCode + "_{contrast}_ds_support.tsv",
         clusters = outFolder + dataCode + "_filtered_perind_numers.counts.gz"
     output:
-        sigClusters = outFolder + dataCode + "_cluster_significance.txt",
-        effectSizes = outFolder + dataCode + "_effect_sizes.txt"
+        sigClusters = outFolder + "{contrast}/" + dataCode + "_{contrast}_cluster_significance.txt",
+        effectSizes = outFolder + "{contrast}/" + dataCode + "_{contrast}_effect_sizes.txt"
     params:
         n_threads = leafcutterOpt['n_threads']
     shell:  
         'ml R/3.6.0; ' 
         'Rscript {leafcutterPath}/scripts/leafcutter_ds.R '
-        '   --output_prefix {outFolder}{dataCode} '
+        '   --output_prefix {outFolder}{dataCode}_{wildcards.contrast} '
         '   --num_threads {params.n_threads} '
         '   --min_samples_per_intron {samplesPerIntron} '
         '   --min_samples_per_group {samplesPerGroup} '
@@ -286,7 +304,7 @@ rule getTerminalExons:
         genepred = refFolder + refCode + ".genepred",
         starts = refFolder + refCode + "_first_exons.bed",
         ends = refFolder + refCode + "_last_exons.bed",
-        utr5 = refFolder + refCode + "/5UTR.bed" 
+        utr5 = refFolder + refCode + "/5UTRs.bed" 
     shell:
         "{params.gtftogenepred} {input} {output.genepred};"
         "python {params.genepredtobed} --first_exon {output.genepred} > {output.starts} ; "
@@ -298,58 +316,58 @@ rule getTerminalExons:
 rule prepareShiny:
     input:
         clusterCounts = outFolder + dataCode + "_filtered_perind_numers.counts.gz",
-        sigClusters = outFolder + dataCode + "_cluster_significance.txt",
-        effectSizes = outFolder + dataCode + "_effect_sizes.txt",
-        support = outFolder + dataCode + "_ds_support.tsv",
+        sigClusters = outFolder + "{contrast}/" + dataCode + "_{contrast}_cluster_significance.txt",
+        effectSizes = outFolder + "{contrast}/" + dataCode + "_{contrast}_effect_sizes.txt",
+        support = outFolder + "{contrast}/" + dataCode + "_{contrast}_ds_support.tsv",
         exonFile = refFolder + refCode + "_all_exons.txt.gz"
     output:
-        shinyData = outFolder + dataCode + "_shiny.RData"
+        shinyData = outFolder + "{contrast}/" + dataCode + "_{contrast}_shiny.RData"
     shell:
         "Rscript {leafcutterPath}/leafviz/prepare_results.R "
         "{input.clusterCounts} {input.sigClusters} {input.effectSizes} "
         "{refFolder}{refCode} "
         "-o {output.shinyData} "
         "-m {input.support} "
-        "-c {dataCode}" 
+        "-c {dataCode}_{wildcards.contrast}" 
 
 # calculate delta PSI for each significant cluster
 rule deltaPSI:
     input:
-        app = outFolder + dataCode + "_shiny.RData"
+        app = outFolder + "{contrast}/" + dataCode + "_{contrast}_shiny.RData"
     output:
-        outFolder + dataCode + "_deltapsi_best.tsv",
-        outFolder + dataCode + "_deltapsi_full.tsv"
+        outFolder + "{contrast}/" + dataCode + "_{contrast}_deltapsi_best.tsv",
+        outFolder + "{contrast}/" + dataCode + "_{contrast}_deltapsi_full.tsv"
     params:
         script = "scripts/create_dPSI_table.R"
     shell:
         "Rscript {params.script} "
         "       --app {input.app} "
                 "       --dataCode {dataCode} "
-                "       --refCondition {refCondition} "
-                "       --altCondition {altCondition} "
+                "       --contrast {wildcards.contrast} "
+                "       --contrastSep {contrastSep} "
                 "       --outFolder {outFolder} "
 
 rule classifyClusters:
     input: 
-        app = outFolder + dataCode + "_shiny.RData",
-        psi_results = outFolder + dataCode + "_deltapsi_full.tsv"
+        app = outFolder + "{contrast}/" + dataCode + "_{contrast}_shiny.RData",
+        psi_results = outFolder + "{contrast}/" + dataCode + "_{contrast}_deltapsi_full.tsv"
     output:
-        outFolder + dataCode + "_classifications.tsv",
-        outFolder + dataCode + "_summary.tsv",
-        outFolder + dataCode + "_cassette_inclusion.tsv"
+        outFolder + "{contrast}/" + dataCode + "_{contrast}_classifications.tsv",
+        outFolder + "{contrast}/" + dataCode + "_{contrast}_summary.tsv",
+        outFolder + "{contrast}/" + dataCode + "_{contrast}_cassette_inclusion.tsv"
     params:
         script = "scripts/classify_clusters.R"
     shell:
         "Rscript {params.script} "
-        " -o {outFolder}/{dataCode} "
+        " -o {outFolder}{dataCode}_{wildcards.contrast} "
                 " {input.app} "
 
 rule quantifyPSI:
     input:  
-        support = outFolder + dataCode + "_ds_support.tsv",
+        support = outFolder + "{contrast}/" + dataCode + "_{contrast}_ds_support.tsv",
         counts = outFolder + dataCode + "_filtered_perind_numers.counts.gz"
     output:
-        outFolder + dataCode + "_residual.counts.gz",
+        outFolder + "{contrast}/" + dataCode + "_{contrast}_residual.counts.gz",
     params:
         script = "scripts/quantify_PSI.R",
         n_threads = leafcutterOpt['n_threads']
