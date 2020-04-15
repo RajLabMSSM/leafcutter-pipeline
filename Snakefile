@@ -148,7 +148,8 @@ rule extractJunctions:
         #"samtools index {input};"  redundant if indexes are present
         #"regtools junctions extract -a 8 -m 50 -M 500000 -s {stranded} -o {output} {input}"
         # conda version of regtools uses i and I instead of m and M 
-        "regtools junctions extract -a 8 -i 50 -I 500000 -s {stranded} -o {output} {input.bam}"
+        "ml regtools/0.5.1; "
+        "regtools junctions extract -a 8 -m 50 -M 500000 -s {stranded} -o {output} {input.bam}"
 
 
 # remove weird contigs that cause add_chr() to break by adding "chr" to normal chr names
