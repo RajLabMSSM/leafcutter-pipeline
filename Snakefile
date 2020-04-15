@@ -97,7 +97,7 @@ isChimera = "hpc.mssm.edu" in socket.getfqdn()
 
 # not sure if this works when running in serial on interactive node
 if isChimera:
-    shell.prefix('export PS1="";source activate leafcutter-pipeline;ml R/3.6.0;')
+    shell.prefix('export PS1="";source activate snakemake;ml R/3.6.0;')
 #else:
 #shell.prefix('conda activate leafcutterpipeline;')
 
