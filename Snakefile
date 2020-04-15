@@ -10,7 +10,7 @@ import itertools
 import pandas as pd
 import os
 import socket
-from shutil import copy
+import shutil 
 # get variables out of config.yaml
 
 
@@ -79,7 +79,7 @@ minCluRatio = leafcutterOpt["minCluRatio"]
 minCluReads = leafcutterOpt["minCluReads"]
 intronMax = leafcutterOpt["intronMax"]
 # FDR threshold of shiny app
-FDR_limit = config["FDR_limit"]
+FDR_limit = leafcutterOpt["FDR_limit"]
 
 # QC options
 missingness = leafcutterOpt["missingness"]
@@ -173,7 +173,7 @@ rule copyConfig:
     run:
         stream = open(output.config_out, 'w')
         dump(config, stream, default_flow_style = False)
-        copy(input.metadata, output.metadata) 
+        shutil.copy(input.metadata, output.metadata) 
 
 # write junction list to file in python rather than bash
 # bash has limit on length of shell command - 1000 samples in an array doesn't work.
@@ -301,7 +301,7 @@ rule getTerminalExons:
     input:
         refFolder + refFile
     params:
-        gtftogenepred= "/sc/orga/projects/ad-omics/data/software/UCSC/gtfToGenePred",
+        gtftogenepred= "/sc/arion/projects/ad-omics/data/software/UCSC/gtfToGenePred",
         genepredtobed = "scripts/genepred_to_bed.py",
         get_regions = "scripts/create_regions_from_gencode.R",
         outFolder = refFolder + refCode + "/"

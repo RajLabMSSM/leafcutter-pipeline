@@ -54,10 +54,11 @@ leafcutter:
         samplesPerGroup: 2
         minCoverage: 20
         n_threads: 4
+        FDR_limit: 0.05
 python3Path: 'python3'
 python2Path: 'python2'
 
-refFolder: "/sc/orga/projects/ad-omics/data/references/hg38_reference/GENCODE/"
+refFolder: "/sc/arion/projects/ad-omics/data/references/hg38_reference/GENCODE/"
 refFile: "gencode.v30.annotation.gtf.gz"
 refCode: "gencode_hg38_v30"
 
