@@ -13,6 +13,7 @@ option_list <- list(
     make_option(c('--contrastSep'), help = "how the two conditions in the contrast string are separated", default = "_" ), 
     make_option(c('--refCondition'), help='', default = "control"),
     make_option(c('--altCondition'), help='', default="case"),
+    make_option(c('--debug'), help = '', action = "store_true", default = FALSE),
         make_option(c('--outFolder'), help='', default = "leafcutter/")
 
 )
@@ -50,8 +51,10 @@ load(app)
 # how to treat all-zero cluster counts? for now ignore these samples
 
 deltaPSI <- function(cluster, control_samples, case_samples){
+  #print(cluster)
   # testing
   #cluster <- "clu_1_-"
+  if( !cluster %in% introns_to_plot$clu ){return(NULL) } 
   cluster_counts <- counts[ introns_to_plot$clu == cluster, ]
   # normalise per sample
   norm_counts <- sweep(cluster_counts, MARGIN = 2, STATS = colSums(cluster_counts),FUN = "/")
@@ -80,6 +83,11 @@ altCondition <- str_split_fixed(contrast, contrastSep, 2)[,2]
 # get sample IDs - assumes only two groups
 control_samples <- meta$sample[meta$group == refCondition]
 case_samples <- meta$sample[meta$group == altCondition]
+
+if( opt$debug == TRUE){
+save.image("debug.RData")
+}
+
 
 # cluster_ids is vector of clusters
 dPSI_table <- purrr::map_df( clusters$clusterID, deltaPSI, control_samples = control_samples, case_samples = case_samples)

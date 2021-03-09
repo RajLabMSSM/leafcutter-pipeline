@@ -7,14 +7,15 @@ arguments <- parse_args(OptionParser(usage = "%prog [options] counts_file", desc
    make_option(c("-t","--timeout"), default=30, help="Maximum time (in seconds) allowed for a single optimization run [default %default]"),
   make_option(c("-p","--num_threads"), default=1, help="Number of threads to use [default %default]"),
   make_option(c("--init"), default="smart", help="One of 'smart' (default) or 'random'."), 
-  make_option(c("--seed"), default=12345, help="Random seed if using random initialization."))),
+  make_option(c("--seed"), default=12345, help="Random seed if using random initialization."),
+  make_option(c("-j", "--juncSuffix"), default = ".junc", help = "the suffix of sample ID on the junction files"))),
   positional_arguments = 1)
 
 library(leafcutter)
 
 opt=arguments$opt
 counts_file=arguments$args[1]
-
+junc_suffix <- opt$juncSuffix
 cat("Loading counts from",counts_file,"\n")
 if (!file.exists(counts_file)) stop("File ",counts_file," does not exist")
 counts=read.table(counts_file, header=T, check.names = F)
@@ -24,6 +25,8 @@ if (!is.null(opt$confounders_file)) {
   if (!file.exists(opt$confounders_file)) stop("File ",opt$confounders_file," does not exist")
   meta=read.table(opt$confounders_file, header=F, stringsAsFactors = F)
   colnames(meta)[1]="sample"
+  sample_suffix <- gsub("\\.junc", "", junc_suffix)
+  names(counts) <- gsub(sample_suffix, "", names(counts) ) 
   counts=counts[,meta$sample]
   
   confounders=meta[,2:ncol(meta),drop=F]

@@ -67,6 +67,10 @@ all_contrasts = [contrastSep.join(i) for i in all_contrasts]
 print(" * %s contrasts detected: " % len(all_contrasts) )
 print(" * %s " % all_contrasts ) 
 
+#print(expand('junctions/{samples}{junc}', samples = samples, junc = juncSuffix))
+
+
+
 # annotation 
 refFolder = config['refFolder']
 refFile = config['refFile']
@@ -82,6 +86,13 @@ intronMax = leafcutterOpt["intronMax"]
 FDR_limit = leafcutterOpt["FDR_limit"]
 
 # QC options
+junction_qc = config["junctionQC"]
+if junction_qc == True:
+    print(" * extra junction QC selected")
+    input_clusters = outFolder + dataCode + "_filtered_perind_numers.counts.gz"
+else:
+    input_clusters = outFolder + dataCode + "_perind_numers.counts.gz"
+
 missingness = leafcutterOpt["missingness"]
 maxsize = leafcutterOpt["maxsize"]
 minratio = leafcutterOpt["minratio"]
@@ -109,7 +120,7 @@ clusterRegtools = config["clusterRegtools"]
 if clusterRegtools == True:
     clusterScript = python3Path + " scripts/leafcutter_cluster_regtools.py"
     junctionMode = "regtools"
-    juncSuffix = ".junc" # enforce this
+    #juncSuffix = ".junc" # enforce this
     strandParam = "" # strandParam only needed for normal clustering
 else:        
     clusterScript = python2Path + " scripts/leafcutter_cluster.py" 
@@ -266,7 +277,7 @@ rule prepareMeta:
 rule leafcutterDS:
     input:
         support = outFolder + "{contrast}/" + dataCode + "_{contrast}_ds_support.tsv",
-        clusters = outFolder + dataCode + "_filtered_perind_numers.counts.gz"
+        clusters = input_clusters #outFolder + dataCode + "_filtered_perind_numers.counts.gz"
     output:
         sigClusters = outFolder + "{contrast}/" + dataCode + "_{contrast}_cluster_significance.txt",
         effectSizes = outFolder + "{contrast}/" + dataCode + "_{contrast}_effect_sizes.txt"
@@ -321,7 +332,7 @@ rule getTerminalExons:
 # prepare results for shiny visualisation
 rule prepareShiny:
     input:
-        clusterCounts = outFolder + dataCode + "_filtered_perind_numers.counts.gz",
+        clusterCounts = input_clusters,
         sigClusters = outFolder + "{contrast}/" + dataCode + "_{contrast}_cluster_significance.txt",
         effectSizes = outFolder + "{contrast}/" + dataCode + "_{contrast}_effect_sizes.txt",
         support = outFolder + "{contrast}/" + dataCode + "_{contrast}_ds_support.tsv",
@@ -372,7 +383,7 @@ rule classifyClusters:
 rule quantifyPSI:
     input:  
         support = outFolder + "{contrast}/" + dataCode + "_{contrast}_ds_support.tsv",
-        counts = outFolder + dataCode + "_filtered_perind_numers.counts.gz"
+        counts = input_clusters
     output:
         outFolder + "{contrast}/" + dataCode + "_{contrast}_residual.counts.gz",
     params:
@@ -383,4 +394,5 @@ rule quantifyPSI:
         " -c {input.support} "
         " -p {params.n_threads} "
         " -o {output} "
+        " -j {juncSuffix} "
         " {input.counts} "
