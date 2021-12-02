@@ -24,6 +24,7 @@ inFolder: 'example/data/'
 bamSuffix: '.bam'
 
 # juncSuffix
+junctionQC: False
 # for samples processed with RAPiD use filtered junctions : {sample}.Aligned.Quality.Sorted.bam.junc 
 juncSuffix: '.junc' 
 
