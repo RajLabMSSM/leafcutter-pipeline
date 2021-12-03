@@ -35,6 +35,8 @@ stranded: 0
 ## Leafcutter settings ---------------------------------
 
 # cluster using regtools junctions or STAR-like junctions
+junctionQC: False
+
 # regtools or rapid
 clusterRegtools: True
 
