@@ -156,11 +156,11 @@ rule extractJunctions:
     output:
         'junctions/{samples}' + juncSuffix
     shell:
-        #"samtools index {input};"  redundant if indexes are present
-        #"regtools junctions extract -a 8 -m 50 -M 500000 -s {stranded} -o {output} {input}"
+        "samtools index {input};" # redundant if indexes are present
+        "regtools junctions extract -a 8 -i 50 -I 500000 -s {stranded} -o {output} {input.bam}"
         # conda version of regtools uses i and I instead of m and M 
-        "ml regtools/0.5.1; "
-        "regtools junctions extract -a 8 -m 50 -M 500000 -s {stranded} -o {output} {input.bam}"
+        # "ml regtools/0.5.1; "
+        # "regtools junctions extract -a 8 -m 50 -M 500000 -s {stranded} -o {output} {input.bam}"
 
 
 # remove weird contigs that cause add_chr() to break by adding "chr" to normal chr names
@@ -313,7 +313,7 @@ rule getTerminalExons:
     input:
         refFolder + refFile
     params:
-        gtftogenepred= "/sc/arion/projects/ad-omics/data/software/UCSC/gtfToGenePred",
+        gtftogenepred= "gtfToGenePred",
         genepredtobed = "scripts/genepred_to_bed.py",
         get_regions = "scripts/create_regions_from_gencode.R",
         outFolder = refFolder + refCode + "/"
