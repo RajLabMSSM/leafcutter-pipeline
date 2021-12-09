@@ -107,8 +107,8 @@ minCoverage = leafcutterOpt["minCoverage"]
 isChimera = "hpc.mssm.edu" in socket.getfqdn()
 
 # not sure if this works when running in serial on interactive node
-if isChimera:
-    shell.prefix('export PS1="";source activate snakemake;ml R/3.6.0;')
+#if isChimera:
+#    shell.prefix('export PS1="";source activate snakemake;ml R/3.6.0;')
 #else:
 #shell.prefix('conda activate leafcutterpipeline;')
 
@@ -246,7 +246,7 @@ rule junctionQC:
     params:
         script = "scripts/cluster_QC.R"
     shell:
-        "ml R/3.6.0; "
+        #"ml R/3.6.0; "
         "Rscript {params.script} "
         "--outFolder {outFolder} "
         "--dataCode {dataCode} "
@@ -284,7 +284,7 @@ rule leafcutterDS:
     params:
         n_threads = leafcutterOpt['n_threads']
     shell:  
-        'ml R/3.6.0; ' 
+        #'ml R/3.6.0; ' 
         'Rscript {leafcutterPath}/scripts/leafcutter_ds.R '
         '   --output_prefix {outFolder}{wildcards.contrast}/{dataCode}_{wildcards.contrast} '
         '   --num_threads {params.n_threads} '
@@ -326,7 +326,7 @@ rule getTerminalExons:
         "{params.gtftogenepred} {input} {output.genepred};"
         "python {params.genepredtobed} --first_exon {output.genepred} > {output.starts} ; "
         "python {params.genepredtobed} --last_exon {output.genepred} > {output.ends}; "
-        "mkdir {params.outFolder}; "
+        "mkdir -p {params.outFolder}; "
         "Rscript {params.get_regions} {input} {params.outFolder}"
 
 # prepare results for shiny visualisation
