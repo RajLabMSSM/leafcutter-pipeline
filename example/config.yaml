@@ -36,9 +36,11 @@ stranded: 0
 
 # cluster using regtools junctions or STAR-like junctions
 # regtools or rapid
-clusterRegtools: True
 
-leafcutterPath: '/hpc/users/humphj04/software/leafcutter'
+clusterRegtools: True
+junctionQC: False 
+
+leafcutterPath: '/app/leafcutter'
 
 leafcutter:
         # clustering options
@@ -58,7 +60,7 @@ leafcutter:
 python3Path: 'python3'
 python2Path: 'python2'
 
-refFolder: "/sc/arion/projects/ad-omics/data/references/hg38_reference/GENCODE/"
-refFile: "gencode.v30.annotation.gtf.gz"
-refCode: "gencode_hg38_v30"
+refFolder: "/app/reference/"
+refFile: "gencode.v38.annotation.gtf.gz"
+refCode: "gencode_hg38_v38"
 

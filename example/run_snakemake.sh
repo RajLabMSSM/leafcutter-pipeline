@@ -3,4 +3,4 @@
 #ml R
 # this version of R has the current version of leafcutter
 
-snakemake  -s ../Snakefile --configfile config.yaml
+snakemake -c1 -s ../Snakefile --configfile config.yaml
