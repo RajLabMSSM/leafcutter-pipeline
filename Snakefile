@@ -12,7 +12,7 @@ import os
 import socket
 import shutil 
 # get variables out of config.yaml
-
+R_VERSION="R/4.0.3"
 
 leafcutterPath = config['leafcutterPath']
 python2Path = config['python2Path']
@@ -108,12 +108,12 @@ isChimera = "hpc.mssm.edu" in socket.getfqdn()
 
 # not sure if this works when running in serial on interactive node
 if isChimera:
-    shell.prefix('export PS1="";source activate snakemake;ml R/3.6.0;')
+    shell.prefix('export PS1="";source activate snakemake;ml {R_VERSION};')
 #else:
 #shell.prefix('conda activate leafcutterpipeline;')
 
 # default R is now 3.6 - doesn't support leafcutter yet
-#shell.prefix('ml R/3.6.0;')
+#shell.prefix('ml {R_VERSION};')
 
 clusterRegtools = config["clusterRegtools"]
 
@@ -134,7 +134,7 @@ rule all:
     #input: outFolder + dataCode + "_perind_numers.counts.gz"
     #input: outFolder + dataCode + "_ds_support.tsv"
     input:
-        refFolder + refCode + "/5UTRs.bed",  
+        #refFolder + refCode + "/5UTRs.bed",  
         expand(outFolder + "{contrast}/" + dataCode + "_{contrast}_shiny.RData", contrast = all_contrasts),
         outFolder + "config.yaml",
         expand(outFolder + "{contrast}/" + dataCode + "_{contrast}_cassette_inclusion.tsv", contrast = all_contrasts),
@@ -246,7 +246,7 @@ rule junctionQC:
     params:
         script = "scripts/cluster_QC.R"
     shell:
-        "ml R/3.6.0; "
+        "ml {R_VERSION}; "
         "Rscript {params.script} "
         "--outFolder {outFolder} "
         "--dataCode {dataCode} "
@@ -284,7 +284,7 @@ rule leafcutterDS:
     params:
         n_threads = leafcutterOpt['n_threads']
     shell:  
-        'ml R/3.6.0; ' 
+        'ml {R_VERSION}; ' 
         'Rscript {leafcutterPath}/scripts/leafcutter_ds.R '
         '   --output_prefix {outFolder}{wildcards.contrast}/{dataCode}_{wildcards.contrast} '
         '   --num_threads {params.n_threads} '
