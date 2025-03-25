@@ -108,7 +108,7 @@ isChimera = "hpc.mssm.edu" in socket.getfqdn()
 
 # not sure if this works when running in serial on interactive node
 if isChimera:
-    shell.prefix('export PS1="";source activate snakemake;ml {R_VERSION};')
+    shell.prefix('export PS1="";source activate leafcutter;')
 #else:
 #shell.prefix('conda activate leafcutterpipeline;')
 
@@ -246,7 +246,7 @@ rule junctionQC:
     params:
         script = "scripts/cluster_QC.R"
     shell:
-        "ml {R_VERSION}; "
+        "conda activate leafcutter; "
         "Rscript {params.script} "
         "--outFolder {outFolder} "
         "--dataCode {dataCode} "
@@ -284,7 +284,7 @@ rule leafcutterDS:
     params:
         n_threads = leafcutterOpt['n_threads']
     shell:  
-        'ml {R_VERSION}; ' 
+        'conda activate leafcutter; ' 
         'Rscript {leafcutterPath}/scripts/leafcutter_ds.R '
         '   --output_prefix {outFolder}{wildcards.contrast}/{dataCode}_{wildcards.contrast} '
         '   --num_threads {params.n_threads} '
